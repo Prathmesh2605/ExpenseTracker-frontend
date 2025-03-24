@@ -27,10 +27,8 @@ export class AuthService {
   });
   
   login(request: LoginRequest): Observable<AuthResponse> {
-    console.log('Login request:', request);
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, request, { headers: this.headers }).pipe(
       tap(response => {
-        console.log('Auth response received:', response);
         this.handleAuthResponse(response);
       })
     );
@@ -56,7 +54,6 @@ export class AuthService {
   }
 
   getStoredToken(): string | null {
-    console.log(localStorage.getItem(this.tokenKey));
     return localStorage.getItem(this.tokenKey);
   }
 
@@ -65,11 +62,9 @@ export class AuthService {
   }
 
   private handleAuthResponse(response: AuthResponse): void {
-    console.log('Handling auth response:', response);
     localStorage.setItem(this.tokenKey, response.token);
     localStorage.setItem(this.refreshTokenKey, response.refreshToken);
     
-    console.log('Token stored in localStorage:', localStorage.getItem(this.tokenKey));
     
     const user: User = {
       id: response.userId,

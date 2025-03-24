@@ -1,15 +1,15 @@
 export interface Expense {
   id: string;
-  title: string;
   amount: number;
+  description: string;
   date: Date;
+  type: 'Income' | 'Expense';
+  currency: string;
   categoryId: string;
-  category?: Category;
-  description?: string;
-  receiptUrl?: string;
-  userId: string;
+  categoryName: string;
+  isRecurring: boolean;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export interface Category {
@@ -20,11 +20,14 @@ export interface Category {
 }
 
 export interface ExpenseCreateRequest {
-  title: string;
+  description: string;
   amount: number;
   date: Date;
   categoryId: string;
-  description?: string;
+  type: 'Income' | 'Expense';
+  currency: string;
+  isRecurring: boolean;
+  note?: string;
   receipt?: File;
 }
 

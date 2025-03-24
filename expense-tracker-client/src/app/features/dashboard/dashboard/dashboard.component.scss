@@ -337,6 +337,159 @@ body {
   }
 }
 
+// Recent Expenses Table
+.recent-expenses-card {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  border: none;
+  overflow: hidden;
+  
+  .card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1rem 1.25rem;
+  }
+  
+  table {
+    margin-bottom: 0;
+    
+    thead {
+      th {
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        border-top: none;
+      }
+    }
+    
+    tbody {
+      tr {
+        transition: background-color 0.2s;
+        
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        td {
+          padding-top: 0.75rem;
+          padding-bottom: 0.75rem;
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+  
+  .date-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 2px 8px;
+    min-width: 46px;
+    text-align: center;
+    
+    .date-month {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #6c757d;
+      line-height: 1;
+    }
+    
+    .date-day {
+      font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+  }
+  
+  .expense-title {
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  
+  .category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: white;
+    
+    i {
+      margin-right: 5px;
+      font-size: 0.75rem;
+    }
+    
+    // Category color classes
+    &.bg-info {
+      background-color: #0dcaf0;
+    }
+    
+    &.bg-purple {
+      background-color: #6f42c1;
+    }
+    
+    &.bg-warning {
+      background-color: #ffc107;
+      color: #212529; // Dark text for better contrast
+    }
+    
+    &.bg-danger {
+      background-color: #dc3545;
+    }
+    
+    &.bg-success {
+      background-color: #198754;
+    }
+    
+    &.bg-secondary {
+      background-color: #6c757d;
+    }
+  }
+  
+  .pagination {
+    .page-link {
+      border-radius: 4px;
+      margin: 0 2px;
+      border-color: #e0e0e0;
+      
+      &:focus {
+        box-shadow: 0 0 0 0.15rem rgba(99, 102, 241, 0.25);
+      }
+    }
+    
+    .page-item.active .page-link {
+      background-color: #6366f1;
+      border-color: #6366f1;
+    }
+    
+    .page-item.disabled .page-link {
+      color: #adb5bd;
+    }
+  }
+}
+
+// Loading overlay
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
 // Date range selector
 .date-range-selector {
   display: flex;

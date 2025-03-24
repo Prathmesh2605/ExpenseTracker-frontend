@@ -13,9 +13,6 @@ export class AppComponent {
   title = 'Expense Tracker';
   
   constructor(private router: Router) {
-    this.router.events.subscribe(event => {
-      if (event instanceof NavigationEnd) {
-        console.log('Current URL:', event.url);
-      }
-    });
-}}
+    
+  }
+}

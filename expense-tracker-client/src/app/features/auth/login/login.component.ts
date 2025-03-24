@@ -43,7 +43,6 @@ export class LoginComponent {
   }
 
   ngOnInit() {
-    console.log('LoginComponent initialized');
   }
 
   navigateToRegister() {
@@ -58,8 +57,6 @@ export class LoginComponent {
     this.isLoading = true;
     this.authService.login(this.loginForm.value).subscribe({
       next: (response) => {
-        console.log('Login successful', response);
-        console.log('Token stored:', localStorage.getItem('token'));
         window.location.href = '/dashboard';
       },
       error: (error) => {

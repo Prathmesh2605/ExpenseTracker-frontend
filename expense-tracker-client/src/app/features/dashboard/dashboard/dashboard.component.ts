@@ -1,4 +1,4 @@
-import { Component, type OnInit, ViewChild } from "@angular/core"
+import { Component, type OnInit, ViewChild, ChangeDetectorRef } from "@angular/core"
 import { ExpenseService } from "../../../core/services/expense.service"
 import { ExpenseSummary, Expense, CategoryBreakdown, MonthlyTotal } from "../../../core/models/expense.model"
 import { ChartConfiguration, ChartOptions, Chart } from "chart.js"
@@ -28,11 +28,15 @@ export class DashboardComponent implements OnInit {
   recentExpenses: Expense[] = []
   totalExpenses = 0
   currentPage = 1
+  totalPages = 1
+  pageSize = 5
   currentDateRange: "week" | "month" | "quarter" | "halfYear" | "year" = "halfYear";
   
-  // Category color mapping
-  categoryColorMap = new Map<string, string>();
-  
+  // Category mapping
+  private categoryIconMap: {[key: string]: string} = {};
+  private categoryColorMap: {[key: string]: string} = {};
+  private categoryColorChartMap: {[key: string]: string} = {}; // For chart colors
+
   // Color palette for charts (typed as string array)
   colorPalette: string[] = [
     "#6366f1", // Indigo
@@ -222,8 +226,46 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private expenseService: ExpenseService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {
+    // Initialize category mappings
+    this.initializeCategoryMappings();
+  }
+
+  private initializeCategoryMappings(): void {
+    // Default icons for categories
+    this.categoryIconMap = {
+      'default': 'tag',
+      '46396d68-5708-4bc9-b04e-629047ac1162': 'car', // Transportation
+      'bca3f16d-8ec9-43a2-868f-19c58a7ef3c0': 'film', // Entertainment
+      '53107c29-360f-4ed8-b2fd-1ebfa74c0214': 'bolt', // Utilities
+      'f8fd6e59-e4c0-44aa-80df-9bbaebb2078a': 'medkit', // Healthcare
+      'b5e67758-4fe3-4788-8bd6-6593d1b3ac03': 'book', // Education
+      // Add more mappings as needed
+    };
+
+    // Default colors for categories
+    this.categoryColorMap = {
+      'default': 'bg-secondary',
+      '46396d68-5708-4bc9-b04e-629047ac1162': 'bg-info', // Transportation
+      'bca3f16d-8ec9-43a2-868f-19c58a7ef3c0': 'bg-purple', // Entertainment
+      '53107c29-360f-4ed8-b2fd-1ebfa74c0214': 'bg-warning', // Utilities
+      'f8fd6e59-e4c0-44aa-80df-9bbaebb2078a': 'bg-danger', // Healthcare
+      'b5e67758-4fe3-4788-8bd6-6593d1b3ac03': 'bg-success', // Education
+      // Add more mappings as needed
+    };
+  }
+
+  getCategoryIcon(categoryId: string | undefined): string {
+    if (!categoryId) return this.categoryIconMap['default'];
+    return this.categoryIconMap[categoryId] || this.categoryIconMap['default'];
+  }
+
+  getCategoryColorClass(categoryId: string | undefined): string {
+    if (!categoryId) return this.categoryColorMap['default'];
+    return this.categoryColorMap[categoryId] || this.categoryColorMap['default'];
+  }
 
   ngOnInit(): void {
     this.resetChartData();
@@ -256,29 +298,6 @@ export class DashboardComponent implements OnInit {
       default:
         return "Last 6 months"
     }
-  }
-
-  getCategoryIcon(icon: string | undefined): string {
-    // Map Material icons to FontAwesome icons
-    const iconMap: { [key: string]: string } = {
-      restaurant: "utensils",
-      directions_car: "car",
-      shopping_cart: "shopping-cart",
-      movie: "film",
-      power: "bolt",
-      category: "tag",
-      home: "home",
-      flight: "plane",
-      hotel: "hotel",
-      school: "graduation-cap",
-      medical_services: "medkit",
-      sports_esports: "gamepad",
-      fitness_center: "dumbbell",
-      pets: "paw",
-      card_giftcard: "gift",
-    }
-
-    return icon ? iconMap[icon] || "tag" : "tag"
   }
 
   viewAllExpenses(): void {
@@ -538,20 +557,20 @@ export class DashboardComponent implements OnInit {
     
     // Assign consistent colors to categories
     topCategories.forEach((category, index) => {
-      if (!this.categoryColorMap.has(category.categoryName)) {
-        this.categoryColorMap.set(category.categoryName, this.colorPalette[index % this.colorPalette.length]);
+      if (!this.categoryColorChartMap[category.categoryId]) {
+        this.categoryColorChartMap[category.categoryId] = this.colorPalette[index % this.colorPalette.length];
       }
     });
     
-    let labels = topCategories.map(c => c.categoryName || 'Uncategorized');
+    let labels = topCategories.map(c => c.categoryName);
     let data = topCategories.map(c => c.amount);
-    let colors = topCategories.map(c => this.categoryColorMap.get(c.categoryName) || this.colorPalette[0]);
+    let colors = topCategories.map(c => this.categoryColorChartMap[c.categoryId] || this.colorPalette[0]);
     
     if (otherCategories.length > 0) {
       const othersTotal = otherCategories.reduce((sum, cat) => sum + cat.amount, 0);
-      labels.push('Others');
+      labels.push('Other');
       data.push(othersTotal);
-      colors.push('#9ca3af'); // Gray for "Others"
+      colors.push('#CBD5E1'); // Light gray for 'Other'
     }
     
     this.categoryChartData.labels = labels;
@@ -569,11 +588,12 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadRecentExpenses(startDate: Date, endDate: Date): void {
+    this.isLoading = true;
     this.expenseService.getExpenses({
       startDate,
       endDate,
-      pageSize: 5,
-      page: 1,
+      pageSize: this.pageSize,
+      page: this.currentPage,
       sortBy: 'date',
       sortDirection: 'desc'
     }).subscribe({
@@ -581,13 +601,54 @@ export class DashboardComponent implements OnInit {
         this.recentExpenses = response.items;
         this.totalExpenses = response.totalCount;
         this.currentPage = response.pageNumber;
+        this.totalPages = response.totalPages;
         this.isLoading = false;
+        this.cdr.detectChanges(); // Force change detection
       },
       error: (error) => {
         console.error("Error loading recent expenses:", error);
         this.isLoading = false;
+        this.cdr.detectChanges(); // Force change detection
       }
     });
+  }
+
+  changePage(page: number): void {
+    if (page < 1 || page > this.totalPages || page === this.currentPage) {
+      return;
+    }
+    
+    this.currentPage = page;
+    const { startDate, endDate } = this.getDateRangeForFilter();
+    this.loadRecentExpenses(startDate, endDate);
+  }
+
+  getPaginationArray(): number[] {
+    // Create an array of page numbers to display in pagination
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (this.totalPages <= maxPagesToShow) {
+      // If we have fewer pages than max, show all pages
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Otherwise, show a window of pages around current page
+      let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+      
+      // Adjust if we're near the end
+      if (endPage - startPage + 1 < maxPagesToShow) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
   }
 
   private resetChartData(): void {

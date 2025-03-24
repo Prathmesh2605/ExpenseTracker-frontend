@@ -13,14 +13,10 @@ export const authInterceptor: HttpInterceptorFn = (
 
   // Skip interceptor for login/register requests
   if (req.url.includes('/api/Auth/login') || req.url.includes('/api/Auth/register')) {
-    console.log('AuthInterceptor - Skipping auth for login/register request');
     return next(req);
   }
   
   const token = authService.getStoredToken();
-  console.log('AuthInterceptor - URL:', req.url);
-  console.log('AuthInterceptor - Token exists:', !!token);
-  console.log('AuthInterceptor - Token value:', token);
 
   if (token) {
     // Clone the request with the token
@@ -29,15 +25,9 @@ export const authInterceptor: HttpInterceptorFn = (
         Authorization: `Bearer ${token}`
       }
     });
-    
-    console.log('AuthInterceptor - Request headers after token added:', 
-      clonedReq.headers.has('Authorization') ? 
-      clonedReq.headers.get('Authorization') : 
-      'No Authorization header found');
-    
+        
     return next(clonedReq).pipe(
       catchError(error => {
-        console.log('AuthInterceptor - Error:', error.status, error.message);
         if (error.status === 401) {
           // Handle 401 error - refresh token or redirect to login
           authService.logout();
@@ -47,7 +37,6 @@ export const authInterceptor: HttpInterceptorFn = (
       })
     );
   } else {
-    console.log('AuthInterceptor - No token found, redirecting to login');
     router.navigate(['/auth/login']);
     return throwError(() => new Error('Authentication required'));
   }
