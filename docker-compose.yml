@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - expense-tracker-network
+    depends_on:
+      - api-proxy
+
+  api-proxy:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./api-proxy.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - expense-tracker-network
+
+networks:
+  expense-tracker-network:
+    driver: bridge
