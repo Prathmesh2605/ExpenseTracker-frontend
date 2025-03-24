@@ -1,0 +1,40 @@
+name: Angular Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        cache-dependency-path: './expense-tracker-client/package-lock.json'
+        
+    - name: Install dependencies
+      run: cd expense-tracker-client && npm ci
+      
+    - name: Lint
+      run: cd expense-tracker-client && npm run lint
+      
+    - name: Build
+      run: cd expense-tracker-client && npm run build
+      
+    - name: Test
+      run: cd expense-tracker-client && npm run test -- --watch=false --browsers=ChromeHeadless
+      
+    - name: Upload build artifact
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v3
+      with:
+        name: expense-tracker-frontend
+        path: ./expense-tracker-client/dist
