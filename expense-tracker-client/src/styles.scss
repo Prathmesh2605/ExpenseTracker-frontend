@@ -1,0 +1,24 @@
+/* Import Poppins font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #7c3aed;
+  --card-bg: white;
+  --background-gradient-start: #ede9fe;
+  --background-gradient-end: #f5f3ff;
+}
+
+/* Apply gradient to the entire page */
+body {
+  background: linear-gradient(to bottom, var(--background-gradient-start), var(--background-gradient-end));
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Global app container */
+.app-container {
+  width: 100%;
+  max-width: 100%;
+}

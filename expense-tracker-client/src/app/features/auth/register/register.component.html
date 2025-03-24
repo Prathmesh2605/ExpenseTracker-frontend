@@ -1,0 +1,87 @@
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+  <div class="card p-4">
+    <div class="text-center mb-4">
+      <div class="icon-circle mb-3">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z'/%3E%3Cpath d='m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z'/%3E%3Cpath d='M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0'/%3E%3Cpath d='M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5'/%3E%3C/svg%3E" alt="SVG Icon">
+      </div>
+      <h2 class="font-weight-bold">Create an Account</h2>
+      <p class="text-muted">Join Pulse and start your journey.</p>
+    </div>
+
+    <!-- Social Login Buttons -->
+    <div class="d-flex justify-content-center gap-3 mb-4">
+      <button class="btn btn-outline-secondary flex-1">
+        <i class="fab fa-twitter"></i> Twitter
+      </button>
+      <button class="btn btn-outline-secondary flex-1">
+        <i class="fab fa-github"></i> GitHub
+      </button>
+      <button class="btn btn-outline-secondary flex-1">
+        <i class="fas fa-envelope"></i> Google
+      </button>
+    </div>
+
+    <!-- Divider -->
+    <div class="divider">
+      <hr>
+      <span>OR CONTINUE WITH</span>
+      <hr>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <!-- First Name Field -->
+      <div class="mb-3">
+        <input type="text" class="form-control" placeholder="First Name" formControlName="firstName">
+        <small class="text-danger" *ngIf="registerForm.get('firstName')?.invalid && (registerForm.get('firstName')?.dirty || registerForm.get('firstName')?.touched)">
+          <span *ngIf="registerForm.get('firstName')?.hasError('required')">First name is required.</span>
+        </small>
+      </div>
+
+      <!-- Last Name Field -->
+      <div class="mb-3">
+        <input type="text" class="form-control" placeholder="Last Name" formControlName="lastName">
+        <small class="text-danger" *ngIf="registerForm.get('lastName')?.invalid && (registerForm.get('lastName')?.dirty || registerForm.get('lastName')?.touched)">
+          <span *ngIf="registerForm.get('lastName')?.hasError('required')">Last name is required.</span>
+        </small>
+      </div>
+
+      <!-- Email Field -->
+      <div class="mb-3">
+        <input type="email" class="form-control" placeholder="Email" formControlName="email">
+        <small class="text-danger" *ngIf="registerForm.get('email')?.invalid && (registerForm.get('email')?.dirty || registerForm.get('email')?.touched)">
+          <span *ngIf="registerForm.get('email')?.hasError('required')">Email is required.</span>
+          <span *ngIf="registerForm.get('email')?.hasError('email')">Invalid email format.</span>
+        </small>
+      </div>
+
+      <!-- Password Field -->
+      <div class="mb-4">
+        <input type="password" class="form-control" placeholder="Password" formControlName="password">
+        <small class="text-danger" *ngIf="registerForm.get('password')?.invalid && (registerForm.get('password')?.dirty || registerForm.get('password')?.touched)">
+          <span *ngIf="registerForm.get('password')?.hasError('required')">Password is required.</span>
+          <span *ngIf="registerForm.get('password')?.hasError('minlength')">Password must be at least 6 characters.</span>
+        </small>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="d-grid gap-2">
+        <button class="btn btn-custom btn-block" type="submit" [disabled]="registerForm.invalid || isLoading">
+          <span *ngIf="isLoading"><i class="fas fa-spinner fa-spin me-2"></i>Creating Account...</span>
+          <span *ngIf="!isLoading">Register</span>
+        </button>
+        <button class="btn btn-custom btn-block" type="button" (click)="navigateToLogin()">Back to Login</button>
+      </div>
+    </form>
+
+    <!-- Footer Links -->
+    <div class="text-center mt-4">
+      <div class="text-muted mb-2">
+        <a href="#" class="me-2">Terms of Service</a> • 
+        <a href="#" class="mx-2">Privacy Policy</a> • 
+        <a href="#" class="ms-2">Help Center</a>
+      </div>
+      <small class="text-muted">We respect your privacy</small>
+    </div>
+  </div>
+</div>
