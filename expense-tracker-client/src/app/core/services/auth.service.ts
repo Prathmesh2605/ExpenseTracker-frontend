@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthResponse, LoginRequest, RegisterRequest, User } from '../models/auth.model';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +18,10 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private router: Router
+  ) {
     this.loadStoredUser();
   }
   
@@ -45,6 +49,7 @@ export class AuthService {
     localStorage.removeItem(this.refreshTokenKey);
     localStorage.removeItem(this.userKey);
     this.currentUserSubject.next(null);
+    this.router.navigate(['/auth/login']);
   }
 
   refreshToken(refreshToken: string): Observable<AuthResponse> {
@@ -61,10 +66,13 @@ export class AuthService {
     return !!this.getStoredToken();
   }
 
+  redirectToDashboard(): void {
+    window.location.href = '/dashboard';
+  }
+
   private handleAuthResponse(response: AuthResponse): void {
     localStorage.setItem(this.tokenKey, response.token);
     localStorage.setItem(this.refreshTokenKey, response.refreshToken);
-    
     
     const user: User = {
       id: response.userId,
