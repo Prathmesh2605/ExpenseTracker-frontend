@@ -27,7 +27,6 @@ export class ExpenseService {
   private getAuthHeaders(): HttpHeaders {
     // Get the token from AuthService instead of directly from localStorage
     const token = this.authService.getStoredToken();
-    console.log('ExpenseService - Getting token from AuthService:', token);
     
     return new HttpHeaders({
       'Content-Type': 'application/json',
@@ -51,7 +50,7 @@ export class ExpenseService {
       });
     }
     if (filters.page) {
-      params = params.set('page', filters.page.toString());
+      params = params.set('pageNumber', filters.page.toString());
     }
     if (filters.pageSize) {
       params = params.set('pageSize', filters.pageSize.toString());
@@ -71,54 +70,50 @@ export class ExpenseService {
 
   getExpenseById(id: string): Observable<Expense> {
     const headers = this.getAuthHeaders();
-    console.log('Get Expense By Id API call with token:', headers.get('Authorization'));
 
     return this.http.get<Expense>(`${this.apiUrl}/expenses/${id}`, { headers });
   }
 
   createExpense(request: ExpenseCreateRequest): Observable<Expense> {
     const formData = new FormData();
-    formData.append('title', request.title);
+    formData.append('description', request.description);
     formData.append('amount', request.amount.toString());
     formData.append('date', request.date.toISOString());
     formData.append('categoryId', request.categoryId);
     
-    if (request.description) {
-      formData.append('description', request.description);
+    if (request.note) {
+      formData.append('note', request.note);
     }
     if (request.receipt) {
       formData.append('receipt', request.receipt);
     }
 
     const headers = this.getAuthHeaders();
-    console.log('Create Expense API call with token:', headers.get('Authorization'));
 
     return this.http.post<Expense>(`${this.apiUrl}/expenses`, formData, { headers });
   }
 
   updateExpense(request: ExpenseUpdateRequest): Observable<Expense> {
     const formData = new FormData();
-    formData.append('title', request.title);
+    formData.append('description', request.description);
     formData.append('amount', request.amount.toString());
     formData.append('date', request.date.toISOString());
     formData.append('categoryId', request.categoryId);
     
-    if (request.description) {
-      formData.append('description', request.description);
+    if (request.note) {
+      formData.append('note', request.note);
     }
     if (request.receipt) {
       formData.append('receipt', request.receipt);
     }
 
     const headers = this.getAuthHeaders();
-    console.log('Update Expense API call with token:', headers.get('Authorization'));
 
     return this.http.put<Expense>(`${this.apiUrl}/expenses/${request.id}`, formData, { headers });
   }
 
   deleteExpense(id: string): Observable<void> {
     const headers = this.getAuthHeaders();
-    console.log('Delete Expense API call with token:', headers.get('Authorization'));
 
     return this.http.delete<void>(`${this.apiUrl}/expenses/${id}`, { headers });
   }
@@ -126,7 +121,6 @@ export class ExpenseService {
   // Category operations
   getCategories(): Observable<Category[]> {
     const headers = this.getAuthHeaders();
-    console.log('Get Categories API call with token:', headers.get('Authorization'));
 
     return this.http.get<Category[]>(`${this.apiUrl}/categories`, { headers });
   }
@@ -143,7 +137,6 @@ export class ExpenseService {
     }
 
     const headers = this.getAuthHeaders();
-    console.log('Expense Summary API call with token:', headers.get('Authorization'));
 
     return this.http.get<ExpenseSummary>(`${this.apiUrl}/reports/summary`, { 
       params,

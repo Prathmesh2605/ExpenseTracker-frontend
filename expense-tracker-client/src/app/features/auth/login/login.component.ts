@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { NgIf } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -26,7 +27,7 @@ import { NgIf } from '@angular/common';
     NgIf
   ]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   isLoading = false;
   hidePassword = true;
@@ -34,7 +35,8 @@ export class LoginComponent {
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
@@ -43,7 +45,10 @@ export class LoginComponent {
   }
 
   ngOnInit() {
-    console.log('LoginComponent initialized');
+    // Check if user is already authenticated
+    if (this.authService.isAuthenticated()) {
+      window.location.href = '/dashboard';
+    }
   }
 
   navigateToRegister() {
@@ -58,8 +63,6 @@ export class LoginComponent {
     this.isLoading = true;
     this.authService.login(this.loginForm.value).subscribe({
       next: (response) => {
-        console.log('Login successful', response);
-        console.log('Token stored:', localStorage.getItem('token'));
         window.location.href = '/dashboard';
       },
       error: (error) => {

@@ -186,26 +186,37 @@
             <span class="visually-hidden">Loading...</span>
           </div>
         </div>
-        <table class="table table-hover mb-0">
-          <thead>
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
             <tr>
-              <th>Date</th>
+              <th class="ps-3">Date</th>
               <th>Title</th>
               <th>Category</th>
-              <th class="text-end">Amount</th>
+              <th class="text-end pe-3">Amount</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let expense of recentExpenses">
-              <td>{{ expense.date | date:'MMM d, y' }}</td>
-              <td>{{ expense.title }}</td>
+            <tr *ngFor="let expense of recentExpenses" [routerLink]="['/expenses', expense.id]" style="cursor: pointer;">
+              <td class="ps-3">
+                <div class="d-flex align-items-center">
+                  <div class="date-badge me-2">
+                    <span class="date-month">{{ expense.date | date:'MMM' }}</span>
+                    <span class="date-day">{{ expense.date | date:'dd' }}</span>
+                  </div>
+                  <span>{{ expense.date | date:'yyyy' }}</span>
+                </div>
+              </td>
               <td>
-                <span class="category-badge" [ngStyle]="{'background-color': expense.category?.color || '#e0e0e0'}">
-                  <i *ngIf="expense.category?.icon" class="fas fa-{{ getCategoryIcon(expense.category?.icon) }}"></i>
-                  {{ expense.category?.name }}
+                <div class="expense-title">{{ expense.description || 'Untitled Expense' }}</div>
+                <small class="text-muted" *ngIf="expense.type">{{ expense.type }} • {{ expense.currency }}</small>
+              </td>
+              <td>
+                <span class="category-badge" [ngClass]="getCategoryColorClass(expense.categoryId)">
+                  <i class="fas fa-{{ getCategoryIcon(expense.categoryId) }}"></i>
+                  {{ expense.categoryName || 'Uncategorized' }}
                 </span>
               </td>
-              <td class="text-end fw-bold">{{ expense.amount | currency }}</td>
+              <td class="text-end fw-bold pe-3" [ngClass]="{'text-danger': expense.type === 'Expense', 'text-success': expense.type === 'Income'}">{{ expense.amount | currency:expense.currency }}</td>
             </tr>
             <tr *ngIf="recentExpenses.length === 0 && !isLoading">
               <td colspan="4" class="text-center py-4">
@@ -223,11 +234,13 @@
         <nav aria-label="Recent expenses pagination">
           <ul class="pagination pagination-sm mb-0">
             <li class="page-item" [class.disabled]="currentPage === 1">
-              <a class="page-link" href="#" tabindex="-1" [attr.aria-disabled]="currentPage === 1">Previous</a>
+              <a class="page-link" href="javascript:void(0)" (click)="changePage(currentPage - 1)" [attr.aria-disabled]="currentPage === 1">Previous</a>
             </li>
-            <li class="page-item active"><a class="page-link" href="#">{{ currentPage }}</a></li>
-            <li class="page-item">
-              <a class="page-link" href="#">Next</a>
+            <li class="page-item" *ngFor="let page of getPaginationArray()" [class.active]="page === currentPage">
+              <a class="page-link" href="javascript:void(0)" (click)="changePage(page)">{{ page }}</a>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <a class="page-link" href="javascript:void(0)" (click)="changePage(currentPage + 1)" [attr.aria-disabled]="currentPage === totalPages">Next</a>
             </li>
           </ul>
         </nav>

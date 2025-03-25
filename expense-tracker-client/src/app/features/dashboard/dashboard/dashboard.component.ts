@@ -1,7 +1,7 @@
-import { Component, type OnInit, ViewChild } from "@angular/core"
+import { Component, type OnInit, ViewChild, ChangeDetectorRef } from "@angular/core"
 import { ExpenseService } from "../../../core/services/expense.service"
 import { ExpenseSummary, Expense, CategoryBreakdown, MonthlyTotal } from "../../../core/models/expense.model"
-import { ChartConfiguration, ChartOptions, Chart } from "chart.js"
+import { ChartConfiguration } from "chart.js"
 import { BaseChartDirective } from "ng2-charts"
 import { Router } from "@angular/router"
 
@@ -13,6 +13,46 @@ interface PaginatedResponse<T> {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
 }
+
+// Category mappings
+const CATEGORY_ICON_MAP: Record<string, string> = {
+  'default': 'tag',
+  '46396d68-5708-4bc9-b04e-629047ac1162': 'car', // Transportation
+  'bca3f16d-8ec9-43a2-868f-19c58a7ef3c0': 'film', // Entertainment
+  '53107c29-360f-4ed8-b2fd-1ebfa74c0214': 'bolt', // Utilities
+  'f8fd6e59-e4c0-44aa-80df-9bbaebb2078a': 'medkit', // Healthcare
+  'b5e67758-4fe3-4788-8bd6-6593d1b3ac03': 'book', // Education
+};
+
+const CATEGORY_COLOR_MAP: Record<string, string> = {
+  'default': 'bg-secondary',
+  '46396d68-5708-4bc9-b04e-629047ac1162': 'bg-info', // Transportation
+  'bca3f16d-8ec9-43a2-868f-19c58a7ef3c0': 'bg-purple', // Entertainment
+  '53107c29-360f-4ed8-b2fd-1ebfa74c0214': 'bg-warning', // Utilities
+  'f8fd6e59-e4c0-44aa-80df-9bbaebb2078a': 'bg-danger', // Healthcare
+  'b5e67758-4fe3-4788-8bd6-6593d1b3ac03': 'bg-success', // Education
+};
+
+// Color palette for charts
+const CHART_COLOR_PALETTE: string[] = [
+  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", 
+  "#eab308", "#22c55e", "#14b8a6", "#0ea5e9", "#6366f1"
+];
+
+// Date range options
+const DATE_RANGE_TEXT_MAP: Record<string, string> = {
+  "week": "Last 7 days",
+  "month": "Last 30 days",
+  "quarter": "Last 3 months",
+  "halfYear": "Last 6 months", 
+  "year": "Last 12 months"
+};
+
+// Chart animations
+const CHART_ANIMATION = {
+  duration: 1000,
+  easing: 'easeOutQuart' as const
+};
 
 @Component({
   selector: "app-dashboard",
@@ -28,26 +68,15 @@ export class DashboardComponent implements OnInit {
   recentExpenses: Expense[] = []
   totalExpenses = 0
   currentPage = 1
+  totalPages = 1
+  pageSize = 5
   currentDateRange: "week" | "month" | "quarter" | "halfYear" | "year" = "halfYear";
   
-  // Category color mapping
-  categoryColorMap = new Map<string, string>();
-  
-  // Color palette for charts (typed as string array)
-  colorPalette: string[] = [
-    "#6366f1", // Indigo
-    "#8b5cf6", // Violet
-    "#ec4899", // Pink
-    "#ef4444", // Red
-    "#f97316", // Orange
-    "#eab308", // Yellow
-    "#22c55e", // Green
-    "#14b8a6", // Teal
-    "#0ea5e9", // Sky
-    "#6366f1", // Indigo (repeat)
-    "#8b5cf6", // Violet (repeat)
-    "#ec4899", // Pink (repeat)
-  ];
+  // Category mapping
+  private categoryColorChartMap: {[key: string]: string} = {};
+
+  // Use constants for static data
+  readonly colorPalette = CHART_COLOR_PALETTE;
 
   // Chart configurations
   monthlyChartData: ChartConfiguration<'bar'>['data'] = {
@@ -90,14 +119,7 @@ export class DashboardComponent implements OnInit {
           font: {
             size: 10
           },
-          callback: (value) => {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0
-            }).format(value as number);
-          }
+          callback: (value) => this.formatCurrency(value as number, 0)
         }
       }
     },
@@ -108,24 +130,12 @@ export class DashboardComponent implements OnInit {
       tooltip: {
         enabled: true,
         callbacks: {
-          title: (items) => {
-            return items[0].label;
-          },
-          label: (context) => {
-            const value = context.raw as number;
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 2
-            }).format(value);
-          }
+          title: (items) => items[0].label,
+          label: (context) => this.formatCurrency(context.raw as number)
         }
       }
     },
-    animation: {
-      duration: 1000,
-      easing: 'easeOutQuart'
-    }
+    animation: CHART_ANIMATION
   }
 
   categoryChartData: ChartConfiguration<'doughnut'>['data'] = {
@@ -163,22 +173,13 @@ export class DashboardComponent implements OnInit {
               return data.labels.map((label, i) => {
                 const dataset = data.datasets[0];
                 const value = dataset.data[i] as number;
-                // Use type assertion for backgroundColor
                 const backgroundColor = typeof dataset.backgroundColor === 'object' && 
                   Array.isArray(dataset.backgroundColor) ? 
                   dataset.backgroundColor[i] as string : 
                   '#6366f1';
                 
-                // Format the label with amount
-                const formattedValue = new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0
-                }).format(value);
-                
                 return {
-                  text: `${label} (${formattedValue})`,
+                  text: `${label} (${this.formatCurrency(value, 0)})`,
                   fillStyle: backgroundColor,
                   strokeStyle: '#fff',
                   lineWidth: 1,
@@ -197,11 +198,7 @@ export class DashboardComponent implements OnInit {
           label: (context) => {
             const label = context.label || '';
             const value = context.raw as number;
-            const formattedValue = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 2
-            }).format(value);
+            const formattedValue = this.formatCurrency(value);
             
             const dataset = context.dataset;
             const total = dataset.data.reduce((sum: number, val: number) => sum + val, 0);
@@ -215,15 +212,25 @@ export class DashboardComponent implements OnInit {
     animation: {
       animateRotate: true,
       animateScale: true,
-      duration: 1000,
-      easing: 'easeOutQuart'
+      ...CHART_ANIMATION
     }
   }
 
   constructor(
     private expenseService: ExpenseService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {
+    // No need to initialize category mappings as they're now constants
+  }
+
+  getCategoryIcon(categoryId: string | undefined): string {
+    return !categoryId ? CATEGORY_ICON_MAP['default'] : (CATEGORY_ICON_MAP[categoryId] || CATEGORY_ICON_MAP['default']);
+  }
+
+  getCategoryColorClass(categoryId: string | undefined): string {
+    return !categoryId ? CATEGORY_COLOR_MAP['default'] : (CATEGORY_COLOR_MAP[categoryId] || CATEGORY_COLOR_MAP['default']);
+  }
 
   ngOnInit(): void {
     this.resetChartData();
@@ -242,43 +249,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getDateRangeText(): string {
-    switch (this.currentDateRange) {
-      case "week":
-        return "Last 7 days"
-      case "month":
-        return "Last 30 days"
-      case "quarter":
-        return "Last 3 months"
-      case "halfYear":
-        return "Last 6 months"
-      case "year":
-        return "Last 12 months"
-      default:
-        return "Last 6 months"
-    }
-  }
-
-  getCategoryIcon(icon: string | undefined): string {
-    // Map Material icons to FontAwesome icons
-    const iconMap: { [key: string]: string } = {
-      restaurant: "utensils",
-      directions_car: "car",
-      shopping_cart: "shopping-cart",
-      movie: "film",
-      power: "bolt",
-      category: "tag",
-      home: "home",
-      flight: "plane",
-      hotel: "hotel",
-      school: "graduation-cap",
-      medical_services: "medkit",
-      sports_esports: "gamepad",
-      fitness_center: "dumbbell",
-      pets: "paw",
-      card_giftcard: "gift",
-    }
-
-    return icon ? iconMap[icon] || "tag" : "tag"
+    return DATE_RANGE_TEXT_MAP[this.currentDateRange] || DATE_RANGE_TEXT_MAP["halfYear"];
   }
 
   viewAllExpenses(): void {
@@ -286,14 +257,12 @@ export class DashboardComponent implements OnInit {
   }
 
   navigateToExpensesByCategory(categoryName: string): void {
-    // Navigate to expenses filtered by category
     this.router.navigate(['/expenses'], { 
       queryParams: { category: categoryName } 
     });
   }
 
   navigateToExpensesByMonth(monthYear: string): void {
-    // Parse month from format like "Jan 2023"
     const parts = monthYear.split(' ');
     if (parts.length === 2) {
       const month = this.getMonthNumber(parts[0]);
@@ -323,21 +292,11 @@ export class DashboardComponent implements OnInit {
     const startDate = new Date()
 
     switch (this.currentDateRange) {
-      case "week":
-        startDate.setDate(endDate.getDate() - 7)
-        break
-      case "month":
-        startDate.setDate(endDate.getDate() - 30)
-        break
-      case "quarter":
-        startDate.setMonth(endDate.getMonth() - 3)
-        break
-      case "halfYear":
-        startDate.setMonth(endDate.getMonth() - 6)
-        break
-      case "year":
-        startDate.setFullYear(endDate.getFullYear() - 1)
-        break
+      case "week": startDate.setDate(endDate.getDate() - 7); break
+      case "month": startDate.setDate(endDate.getDate() - 30); break
+      case "quarter": startDate.setMonth(endDate.getMonth() - 3); break
+      case "halfYear": startDate.setMonth(endDate.getMonth() - 6); break
+      case "year": startDate.setFullYear(endDate.getFullYear() - 1); break
     }
 
     return { startDate, endDate }
@@ -347,21 +306,15 @@ export class DashboardComponent implements OnInit {
     this.isLoading = true;
     const { startDate, endDate } = this.getDateRangeForFilter();
 
-    // Reset charts to initial state
     this.resetChartData();
 
-    // Load expense summary
     this.expenseService.getExpenseSummary(startDate, endDate).subscribe({
       next: (summary) => {
         this.isLoading = false;
         this.summary = summary;
 
-        // Check if there's data
-        if (!summary) {
-          return;
-        }
+        if (!summary) return;
 
-        // Transform categorySummaries to categoryBreakdown format if needed
         if (!summary.categoryBreakdown && summary.categorySummaries?.length) {
           summary.categoryBreakdown = summary.categorySummaries.map(cat => ({
             categoryId: cat.categoryId,
@@ -371,75 +324,56 @@ export class DashboardComponent implements OnInit {
           }));
         }
 
-        // Create mock monthlyTotals if missing (for demo purposes)
         if (!summary.monthlyTotals || summary.monthlyTotals.length === 0) {
-          const now = new Date();
-          const currentMonth = now.getMonth();
-          const currentYear = now.getFullYear();
-          
-          // Create 6 months of mock data
-          summary.monthlyTotals = [];
-          for (let i = 5; i >= 0; i--) {
-            const month = (currentMonth - i + 12) % 12 + 1; // Ensure month is 1-12
-            const year = currentMonth - i < 0 ? currentYear - 1 : currentYear;
-            
-            // Generate a random amount that adds up to total
-            const amount = summary.totalAmount / 6 * (0.8 + Math.random() * 0.4);
-            
-            summary.monthlyTotals.push({
-              month,
-              year,
-              amount
-            });
-          }
+          this.createMockMonthlyData(summary);
         }
 
-        // Update monthly chart data
         if (summary.monthlyTotals?.length) {
           this.updateMonthlyChart(summary.monthlyTotals);
-        } else {
-          console.warn('No monthly totals data available');
         }
 
-        // Update category chart data
         if (summary.categoryBreakdown?.length) {
           this.updateCategoryChart(summary.categoryBreakdown);
-        } else {
-          console.warn('No category breakdown data available');
         }
 
-        // Load recent expenses
         this.loadRecentExpenses(startDate, endDate);
       },
       error: (error) => {
-        console.error("Error loading dashboard data:", error);
         this.isLoading = false;
       }
     });
   }
 
+  private createMockMonthlyData(summary: ExpenseSummary): void {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    summary.monthlyTotals = [];
+    for (let i = 5; i >= 0; i--) {
+      const month = (currentMonth - i + 12) % 12 + 1;
+      const year = currentMonth - i < 0 ? currentYear - 1 : currentYear;
+      
+      const amount = summary.totalAmount / 6 * (0.8 + Math.random() * 0.4);
+      
+      summary.monthlyTotals.push({
+        month,
+        year,
+        amount
+      });
+    }
+  }
+
   private updateMonthlyChart(monthlyTotals: MonthlyTotal[] | undefined): void {
     if (!monthlyTotals?.length) {
-      console.warn('No monthly totals data to chart');
-      // Set a placeholder "No Data" label
-      this.monthlyChartData.labels = ['No Data'];
-      this.monthlyChartData.datasets[0].data = [0];
-      
-      // Force update if chart exists
-      setTimeout(() => {
-        if (this.chart?.chart) {
-          this.chart.chart.update();
-        }
-      });
+      this.setNoDataChart(this.monthlyChartData);
       return;
     }
     
-    // Sort monthly totals by date
-    const sortedMonthlyTotals = [...monthlyTotals].sort((a, b) => {
-      return new Date(a.year, a.month - 1).getTime() - new Date(b.year, b.month - 1).getTime();
-    });
+    const sortedMonthlyTotals = [...monthlyTotals].sort((a, b) => 
+      new Date(a.year, a.month - 1).getTime() - new Date(b.year, b.month - 1).getTime()
+    );
     
-    // Fill in gaps for months with no data
     const filledMonthlyTotals = this.fillMissingMonths(sortedMonthlyTotals);
     
     this.monthlyChartData.labels = filledMonthlyTotals.map((m) =>
@@ -447,28 +381,16 @@ export class DashboardComponent implements OnInit {
     );
     this.monthlyChartData.datasets[0].data = filledMonthlyTotals.map((m) => m.amount);
     
-    // Create gradient colors based on expense amount
     const maxAmount = Math.max(...filledMonthlyTotals.map(m => m.amount));
     const backgroundColors: string[] = filledMonthlyTotals.map((m) => {
-      // Use color intensity based on percentage of max amount
       const colorIndex = Math.min(Math.floor((m.amount / maxAmount) * this.colorPalette.length), this.colorPalette.length - 1);
-      // Safely access the color palette with proper type checking
       return this.colorPalette[colorIndex] || this.colorPalette[0];
     });
     
     this.monthlyChartData.datasets[0].backgroundColor = backgroundColors;
-    
-    // Update hover colors
     this.monthlyChartData.datasets[0].hoverBackgroundColor = backgroundColors.map(color => this.adjustColorBrightness(color, -15));
     
-    // Update chart if it exists
-    setTimeout(() => {
-      if (this.chart?.chart) {
-        this.chart.chart.update();
-      } else {
-        console.warn('Monthly chart reference not available for update');
-      }
-    });
+    this.updateChart();
   }
 
   private fillMissingMonths(monthlyTotals: MonthlyTotal[]): MonthlyTotal[] {
@@ -481,14 +403,11 @@ export class DashboardComponent implements OnInit {
     let currentDate = new Date(firstMonth.year, firstMonth.month - 1, 1);
     const endDate = new Date(lastMonth.year, lastMonth.month - 1, 1);
     
-    // Create a map for quick lookup
     const monthMap = new Map<string, MonthlyTotal>();
     monthlyTotals.forEach(m => {
-      const key = `${m.year}-${m.month}`;
-      monthMap.set(key, m);
+      monthMap.set(`${m.year}-${m.month}`, m);
     });
     
-    // Fill in all months between first and last
     while (currentDate <= endDate) {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
@@ -497,15 +416,9 @@ export class DashboardComponent implements OnInit {
       if (monthMap.has(key)) {
         result.push(monthMap.get(key)!);
       } else {
-        // Add a zero entry for missing months
-        result.push({
-          month,
-          year,
-          amount: 0
-        });
+        result.push({ month, year, amount: 0 });
       }
       
-      // Move to next month
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
     
@@ -514,66 +427,45 @@ export class DashboardComponent implements OnInit {
 
   private updateCategoryChart(categoryBreakdown: CategoryBreakdown[] | undefined): void {
     if (!categoryBreakdown?.length) {
-      console.warn('No category breakdown data to chart');
-      // Set a placeholder "No Data" label
-      this.categoryChartData.labels = ['No Data'];
-      this.categoryChartData.datasets[0].data = [0];
-      this.categoryChartData.datasets[0].backgroundColor = [this.colorPalette[0]];
-      
-      // Force update if chart exists
-      setTimeout(() => {
-        if (this.chart?.chart) {
-          this.chart.chart.update();
-        }
-      });
+      this.setNoDataChart(this.categoryChartData);
       return;
     }
     
-    // Sort categories by amount (descending)
     const sortedCategories = [...categoryBreakdown].sort((a, b) => b.amount - a.amount);
     
-    // Take top 7 categories and group the rest as "Others"
     const topCategories = sortedCategories.slice(0, 7);
     const otherCategories = sortedCategories.slice(7);
     
-    // Assign consistent colors to categories
     topCategories.forEach((category, index) => {
-      if (!this.categoryColorMap.has(category.categoryName)) {
-        this.categoryColorMap.set(category.categoryName, this.colorPalette[index % this.colorPalette.length]);
+      if (!this.categoryColorChartMap[category.categoryId]) {
+        this.categoryColorChartMap[category.categoryId] = this.colorPalette[index % this.colorPalette.length];
       }
     });
     
-    let labels = topCategories.map(c => c.categoryName || 'Uncategorized');
+    let labels = topCategories.map(c => c.categoryName);
     let data = topCategories.map(c => c.amount);
-    let colors = topCategories.map(c => this.categoryColorMap.get(c.categoryName) || this.colorPalette[0]);
+    let colors = topCategories.map(c => this.categoryColorChartMap[c.categoryId] || this.colorPalette[0]);
     
     if (otherCategories.length > 0) {
       const othersTotal = otherCategories.reduce((sum, cat) => sum + cat.amount, 0);
-      labels.push('Others');
+      labels.push('Other');
       data.push(othersTotal);
-      colors.push('#9ca3af'); // Gray for "Others"
+      colors.push('#CBD5E1'); // Light gray for 'Other'
     }
     
     this.categoryChartData.labels = labels;
     this.categoryChartData.datasets[0].data = data;
     this.categoryChartData.datasets[0].backgroundColor = colors;
     
-    // Update chart if it exists
-    setTimeout(() => {
-      if (this.chart?.chart) {
-        this.chart.chart.update();
-      } else {
-        console.warn('Category chart reference not available for update');
-      }
-    });
+    this.updateChart();
   }
 
   private loadRecentExpenses(startDate: Date, endDate: Date): void {
     this.expenseService.getExpenses({
       startDate,
       endDate,
-      pageSize: 5,
-      page: 1,
+      pageSize: this.pageSize,
+      page: this.currentPage,
       sortBy: 'date',
       sortDirection: 'desc'
     }).subscribe({
@@ -581,52 +473,98 @@ export class DashboardComponent implements OnInit {
         this.recentExpenses = response.items;
         this.totalExpenses = response.totalCount;
         this.currentPage = response.pageNumber;
+        this.totalPages = response.totalPages;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error("Error loading recent expenses:", error);
+      error: () => {
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
 
+  changePage(page: number): void {
+    if (page < 1 || page > this.totalPages || page === this.currentPage) {
+      return;
+    }
+    
+    this.currentPage = page;
+    const { startDate, endDate } = this.getDateRangeForFilter();
+    this.loadRecentExpenses(startDate, endDate);
+  }
+
+  getPaginationArray(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+      
+      if (endPage - startPage + 1 < maxPagesToShow) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }
+
   private resetChartData(): void {
-    // Reset category chart
-    this.categoryChartData.labels = ['No Data'];
-    this.categoryChartData.datasets[0].data = [0];
-    this.categoryChartData.datasets[0].backgroundColor = [this.colorPalette[0]];
-    
-    // Reset monthly chart
-    this.monthlyChartData.labels = [];
-    this.monthlyChartData.datasets[0].data = [0];
-    
-    // Force chart update if available
+    this.setNoDataChart(this.categoryChartData);
+    this.setNoDataChart(this.monthlyChartData);
+  }
+
+  private setNoDataChart(chartData: ChartConfiguration['data']): void {
+    chartData.labels = ['No Data'];
+    chartData.datasets[0].data = [0];
+    if (Array.isArray(chartData.datasets[0].backgroundColor)) {
+      chartData.datasets[0].backgroundColor = [this.colorPalette[0]];
+    } else {
+      chartData.datasets[0].backgroundColor = this.colorPalette[0];
+    }
+    this.updateChart();
+  }
+
+  private updateChart(): void {
     setTimeout(() => {
       if (this.chart?.chart) {
         this.chart.chart.update();
       }
-    }, 0);
+    });
   }
 
-  // Helper method to adjust color brightness
+  private formatCurrency(value: number, fractionDigits: number = 2): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits
+    }).format(value);
+  }
+
   private adjustColorBrightness(hex: string, percent: number): string {
-    // Convert hex to RGB
     let r = parseInt(hex.substring(1, 3), 16);
     let g = parseInt(hex.substring(3, 5), 16);
     let b = parseInt(hex.substring(5, 7), 16);
 
-    // Adjust brightness
     r = Math.max(0, Math.min(255, r + percent));
     g = Math.max(0, Math.min(255, g + percent));
     b = Math.max(0, Math.min(255, b + percent));
 
-    // Convert back to hex
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
 
-  // Type-safe handler for category chart click
   onCategoryChartClick(event: any): void {
-    if (event && event.active && event.active.length > 0) {
+    if (event?.active?.length > 0) {
       const index = event.active[0]?.index;
       if (index !== undefined && this.categoryChartData.labels && this.categoryChartData.labels[index]) {
         const category = this.categoryChartData.labels[index] as string;
@@ -635,9 +573,8 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // Type-safe handler for monthly chart click
   onMonthlyChartClick(event: any): void {
-    if (event && event.active && event.active.length > 0) {
+    if (event?.active?.length > 0) {
       const index = event.active[0]?.index;
       if (index !== undefined && this.monthlyChartData.labels && this.monthlyChartData.labels[index]) {
         const month = this.monthlyChartData.labels[index] as string;
