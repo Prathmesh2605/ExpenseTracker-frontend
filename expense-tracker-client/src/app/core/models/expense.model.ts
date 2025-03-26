@@ -8,6 +8,7 @@ export interface Expense {
   categoryId: string;
   categoryName: string;
   isRecurring: boolean;
+  notes?: string;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -27,7 +28,8 @@ export interface ExpenseCreateRequest {
   type: 'Income' | 'Expense';
   currency: string;
   isRecurring: boolean;
-  note?: string;
+  notes?: string;
+  recurrencePattern?: string;
   receipt?: File;
 }
 
@@ -36,11 +38,12 @@ export interface ExpenseUpdateRequest extends ExpenseCreateRequest {
 }
 
 export interface ExpenseFilters {
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: Date | string;
+  endDate?: Date | string;
   categoryIds?: string[];
   minAmount?: number;
   maxAmount?: number;
+  description?: string;
   searchTerm?: string;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';

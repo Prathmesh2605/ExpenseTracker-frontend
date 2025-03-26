@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -36,35 +36,22 @@ export class ExpenseService {
 
   // Expense CRUD operations
   getExpenses(filters: ExpenseFilters): Observable<PaginatedResponse<Expense>> {
-    let params = new HttpParams();
-    
-    if (filters.startDate) {
-      params = params.set('startDate', filters.startDate.toISOString());
-    }
-    if (filters.endDate) {
-      params = params.set('endDate', filters.endDate.toISOString());
-    }
-    if (filters.categoryIds?.length) {
-      filters.categoryIds.forEach(id => {
-        params = params.append('categoryIds', id);
-      });
-    }
-    if (filters.page) {
-      params = params.set('pageNumber', filters.page.toString());
-    }
-    if (filters.pageSize) {
-      params = params.set('pageSize', filters.pageSize.toString());
-    }
-    if (filters.sortBy) {
-      params = params.set('sortBy', filters.sortBy);
-    }
-    if (filters.sortDirection) {
-      params = params.set('sortDirection', filters.sortDirection);
-    }
+    // Create a request body object that matches the backend API expectations
+    const requestBody = {
+      pageNumber: filters.page || 1,
+      pageSize: filters.pageSize || 10,
+      sortBy: filters.sortBy || 'date',
+      sortDirection: filters.sortDirection || 'desc',
+      categoryIds: filters.categoryIds?.map(id => id) || [],
+      startDate: filters.startDate ? new Date(filters.startDate).toISOString() : null,
+      endDate: filters.endDate ? new Date(filters.endDate).toISOString() : null,
+      minAmount: filters.minAmount || null,
+      maxAmount: filters.maxAmount || null,
+      searchTerm: filters.searchTerm || filters.description || null
+    };
 
-    return this.http.get<PaginatedResponse<Expense>>(`${this.apiUrl}/expenses`, {
-      headers: this.getAuthHeaders(),
-      params
+    return this.http.post<PaginatedResponse<Expense>>(`${this.apiUrl}/expenses`, requestBody, {
+      headers: this.getAuthHeaders()
     });
   }
 
@@ -75,41 +62,14 @@ export class ExpenseService {
   }
 
   createExpense(request: ExpenseCreateRequest): Observable<Expense> {
-    const formData = new FormData();
-    formData.append('description', request.description);
-    formData.append('amount', request.amount.toString());
-    formData.append('date', request.date.toISOString());
-    formData.append('categoryId', request.categoryId);
-    
-    if (request.note) {
-      formData.append('note', request.note);
-    }
-    if (request.receipt) {
-      formData.append('receipt', request.receipt);
-    }
-
-    const headers = this.getAuthHeaders();
-
-    return this.http.post<Expense>(`${this.apiUrl}/expenses`, formData, { headers });
+    return this.http.post<Expense>(`${this.apiUrl}/expenses/create`, request, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   updateExpense(request: ExpenseUpdateRequest): Observable<Expense> {
-    const formData = new FormData();
-    formData.append('description', request.description);
-    formData.append('amount', request.amount.toString());
-    formData.append('date', request.date.toISOString());
-    formData.append('categoryId', request.categoryId);
-    
-    if (request.note) {
-      formData.append('note', request.note);
-    }
-    if (request.receipt) {
-      formData.append('receipt', request.receipt);
-    }
-
     const headers = this.getAuthHeaders();
-
-    return this.http.put<Expense>(`${this.apiUrl}/expenses/${request.id}`, formData, { headers });
+    return this.http.put<Expense>(`${this.apiUrl}/expenses/${request.id}`, request, { headers });
   }
 
   deleteExpense(id: string): Observable<void> {
@@ -130,10 +90,10 @@ export class ExpenseService {
     let params = new HttpParams();
     
     if (startDate) {
-      params = params.set('startDate', startDate.toISOString());
+      params = params.set('startDate', new Date(startDate).toISOString());
     }
     if (endDate) {
-      params = params.set('endDate', endDate.toISOString());
+      params = params.set('endDate', new Date(endDate).toISOString());
     }
 
     const headers = this.getAuthHeaders();

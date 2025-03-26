@@ -1,72 +1,45 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-
 import { ExpenseService } from '../../../core/services/expense.service';
 import { Category, Expense, ExpenseCreateRequest, ExpenseUpdateRequest } from '../../../core/models/expense.model';
 import { catchError, finalize, of } from 'rxjs';
 
 @Component({
-  selector: 'app-expense-form',
+  selector: 'app-expense-modal',
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatCardModule,
-    MatDatepickerModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
-    MatSelectModule,
-    MatSnackBarModule,
-    MatNativeDateModule,
-    MatProgressSpinnerModule,
-    MatSlideToggleModule
+    ReactiveFormsModule
   ],
-  templateUrl: './expense-form.component.html',
-  styleUrls: ['./expense-form.component.scss']
+  templateUrl: './expense-modal.component.html',
+  styleUrls: ['./expense-modal.component.scss']
 })
-export class ExpenseFormComponent implements OnInit {
+export class ExpenseModalComponent implements OnInit {
+  @Input() expenseId: string | null = null;
+  @Output() close = new EventEmitter<boolean>();
+  
   expenseForm!: FormGroup;
   categories: Category[] = [];
   isLoading = false;
   isSubmitting = false;
   isEditMode = false;
-  expenseId: string | null = null;
+  currentStep = 1;
+  totalSteps = 4;
   
   constructor(
     private fb: FormBuilder,
-    private expenseService: ExpenseService,
-    private route: ActivatedRoute,
-    private router: Router,
-    private snackBar: MatSnackBar
+    private expenseService: ExpenseService
   ) {}
   
   ngOnInit(): void {
     this.initForm();
     this.loadCategories();
     
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.isEditMode = true;
-        this.expenseId = id;
-        this.loadExpense(id);
-      }
-    });
+    if (this.expenseId) {
+      this.isEditMode = true;
+      this.loadExpense(this.expenseId);
+    }
   }
   
   initForm(): void {
@@ -77,7 +50,7 @@ export class ExpenseFormComponent implements OnInit {
       categoryId: ['', Validators.required],
       type: ['Expense', Validators.required],
       currency: ['USD', Validators.required],
-      note: [''],
+      notes: [''],
       isRecurring: [false]
     });
   }
@@ -87,7 +60,6 @@ export class ExpenseFormComponent implements OnInit {
     this.expenseService.getCategories()
       .pipe(
         catchError(error => {
-          this.snackBar.open('Failed to load categories', 'Close', { duration: 3000 });
           console.error('Error loading categories:', error);
           return of([]);
         }),
@@ -102,12 +74,12 @@ export class ExpenseFormComponent implements OnInit {
   
   loadExpense(id: string): void {
     this.isLoading = true;
+    
     this.expenseService.getExpenseById(id)
       .pipe(
         catchError(error => {
-          this.snackBar.open('Failed to load expense', 'Close', { duration: 3000 });
           console.error('Error loading expense:', error);
-          this.router.navigate(['/expenses']);
+          this.closeModal(false);
           return of(null);
         }),
         finalize(() => {
@@ -116,15 +88,24 @@ export class ExpenseFormComponent implements OnInit {
       )
       .subscribe((expense: Expense | null) => {
         if (expense) {
+          // Format the date as YYYY-MM-DD for the date input field
+          let formattedDate: string | Date;
+          if (expense.date) {
+            const date = new Date(expense.date);
+            formattedDate = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+          } else {
+            formattedDate = new Date().toISOString().split('T')[0];
+          }
+          
           this.expenseForm.patchValue({
             description: expense.description,
             amount: expense.amount,
-            date: expense.date,
+            date: formattedDate,
             categoryId: expense.categoryId,
             type: expense.type,
             currency: expense.currency,
             isRecurring: expense.isRecurring,
-            note: ''
+            notes: expense.notes || ''
           });
         }
       });
@@ -149,13 +130,12 @@ export class ExpenseFormComponent implements OnInit {
         type: formValue.type,
         currency: formValue.currency,
         isRecurring: formValue.isRecurring,
-        notes: formValue.note
+        notes: formValue.notes
       };
       
       this.expenseService.updateExpense(updateRequest)
         .pipe(
           catchError(error => {
-            this.snackBar.open('Failed to update expense', 'Close', { duration: 3000 });
             console.error('Error updating expense:', error);
             return of(null);
           }),
@@ -164,10 +144,7 @@ export class ExpenseFormComponent implements OnInit {
           })
         )
         .subscribe(result => {
-          if (result) {
-            this.snackBar.open('Expense updated successfully', 'Close', { duration: 3000 });
-            this.router.navigate(['/expenses']);
-          }
+          this.closeModal(!!result);
         });
     } else {
       const createRequest: ExpenseCreateRequest = {
@@ -178,13 +155,12 @@ export class ExpenseFormComponent implements OnInit {
         type: formValue.type,
         currency: formValue.currency,
         isRecurring: formValue.isRecurring,
-        notes: formValue.note
+        notes: formValue.notes
       };
       
       this.expenseService.createExpense(createRequest)
         .pipe(
           catchError(error => {
-            this.snackBar.open('Failed to create expense', 'Close', { duration: 3000 });
             console.error('Error creating expense:', error);
             return of(null);
           }),
@@ -193,15 +169,65 @@ export class ExpenseFormComponent implements OnInit {
           })
         )
         .subscribe(result => {
-          if (result) {
-            this.snackBar.open('Expense created successfully', 'Close', { duration: 3000 });
-            this.router.navigate(['/expenses']);
-          }
+          this.closeModal(!!result);
         });
     }
   }
   
-  cancel(): void {
-    this.router.navigate(['/expenses']);
+  nextStep(): void {
+    if (this.currentStep < this.totalSteps) {
+      // Validate current step before proceeding
+      if (this.validateCurrentStep()) {
+        this.currentStep++;
+      }
+    } else {
+      this.onSubmit();
+    }
+  }
+  
+  previousStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+    }
+  }
+  
+  validateCurrentStep(): boolean {
+    const controls = this.expenseForm.controls;
+    
+    switch (this.currentStep) {
+      case 1: // Basic Info
+        return controls['description'].valid && controls['amount'].valid && controls['currency'].valid;
+      case 2: // Date and Category
+        return controls['date'].valid && controls['categoryId'].valid;
+      case 3: // Type and Recurring
+        return controls['type'].valid;
+      default:
+        return true;
+    }
+  }
+  
+  getCategoryName(categoryId: string | null): string {
+    if (!categoryId) return 'None';
+    const category = this.categories.find(c => c.id === categoryId);
+    return category ? category.name : 'None';
+  }
+  
+  closeModal(success: boolean = false): void {
+    this.close.emit(success);
+  }
+  
+  getStepTitle(): string {
+    switch (this.currentStep) {
+      case 1:
+        return 'Basic Information';
+      case 2:
+        return 'Date & Category';
+      case 3:
+        return 'Type & Options';
+      case 4:
+        return 'Additional Notes';
+      default:
+        return '';
+    }
   }
 }

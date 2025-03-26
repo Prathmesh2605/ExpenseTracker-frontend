@@ -30,6 +30,11 @@
 
       <!-- Form -->
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <!-- Error Alert -->
+          <div *ngIf="errorMessage" class="alert alert-danger mb-3">
+              {{ errorMessage }}
+          </div>
+          
           <!-- Email Field -->
           <div class="mb-3">
               <input type="email" class="form-control" placeholder="Enter your email" formControlName="email">
@@ -44,7 +49,6 @@
               <input type="password" class="form-control" placeholder="Enter your password" formControlName="password">
               <small class="text-danger" *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)">
                   <span *ngIf="loginForm.get('password')?.hasError('required')">Password is required.</span>
-                  <span *ngIf="loginForm.get('password')?.hasError('minlength')">Password must be at least 6 characters.</span>
               </small>
           </div>
 

@@ -1,1 +1,229 @@
-<p>expense-list works!</p>
+<div class="container-fluid dashboard-container">
+  <div class="row">
+    <div class="col-12">
+      <div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">My Expenses</h2>
+        <div>
+          <button class="btn btn-primary" (click)="createExpense()">
+            <i class="fas fa-plus-circle me-2"></i>Add New Expense
+          </button>
+        </div>
+      </div>
+      
+      <!-- Enhanced Filter Section -->
+      <div class="card filter-card">
+        <div class="card-header filter-header d-flex justify-content-between align-items-center" (click)="toggleFilters()">
+          <h5 class="mb-0">
+            <i class="fas fa-filter me-2"></i>Filters
+          </h5>
+          <button class="btn btn-sm" [ngClass]="showFilters ? 'btn-outline-secondary' : 'btn-outline-primary'">
+            <i class="fas" [ngClass]="showFilters ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          </button>
+        </div>
+        
+        <div class="card-body filter-content" [hidden]="!showFilters">
+          <form [formGroup]="filterForm" (ngSubmit)="applyFilter()">
+            <!-- Date Range Quick Selectors -->
+            <div class="mb-3 date-range-selector">
+              <label class="form-label">Date Range</label>
+              <div class="btn-group w-100">
+                <button type="button" class="btn" [ngClass]="selectedDateRange === 'week' ? 'btn-primary' : 'btn-outline-secondary'" (click)="setDateRange('week')">This Week</button>
+                <button type="button" class="btn" [ngClass]="selectedDateRange === 'month' ? 'btn-primary' : 'btn-outline-secondary'" (click)="setDateRange('month')">This Month</button>
+                <button type="button" class="btn" [ngClass]="selectedDateRange === 'quarter' ? 'btn-primary' : 'btn-outline-secondary'" (click)="setDateRange('quarter')">This Quarter</button>
+                <button type="button" class="btn" [ngClass]="selectedDateRange === 'year' ? 'btn-primary' : 'btn-outline-secondary'" (click)="setDateRange('year')">This Year</button>
+                <button type="button" class="btn" [ngClass]="selectedDateRange === 'custom' ? 'btn-primary' : 'btn-outline-secondary'" (click)="setDateRange('custom')">Custom</button>
+              </div>
+            </div>
+            
+            <div class="row">
+              <!-- Custom Date Range -->
+              <div class="col-md-6">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-control" formControlName="startDate">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date" class="form-control" formControlName="endDate">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Category Multi-select -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Categories</label>
+                <div class="dropdown category-dropdown w-100" [class.show]="categoryDropdownOpen">
+                  <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" (click)="toggleCategoryDropdown($event)">
+                    {{ getSelectedCategories().length > 0 ? getSelectedCategories().length + ' selected' : 'Select Categories' }}
+                  </button>
+                  <div class="dropdown-menu w-100 p-3" [class.show]="categoryDropdownOpen">
+                    <div class="mb-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAllCategories" [checked]="areAllCategoriesSelected()" (change)="toggleAllCategories()">
+                        <label class="form-check-label" for="selectAllCategories">
+                          <strong>Select All</strong>
+                        </label>
+                      </div>
+                    </div>
+                    <hr>
+                    <div class="category-list">
+                      <div class="form-check" *ngFor="let category of categories">
+                        <input class="form-check-input" type="checkbox" [id]="'category-' + category.id" [checked]="isCategorySelected(category.id)" (change)="toggleCategory(category.id)">
+                        <label class="form-check-label" [for]="'category-' + category.id">
+                          {{ category.name }}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <!-- Amount Range -->
+              <div class="col-md-6">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Min Amount</label>
+                    <input type="number" class="form-control" formControlName="minAmount" placeholder="0.00">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Max Amount</label>
+                    <input type="number" class="form-control" formControlName="maxAmount" placeholder="0.00">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Description Search -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" formControlName="description" placeholder="Search in descriptions...">
+              </div>
+            </div>
+            
+            <!-- Filter Actions -->
+            <div class="d-flex justify-content-end">
+              <button type="button" class="btn btn-outline-secondary me-2" (click)="resetFilter()">
+                <i class="fas fa-undo me-1"></i>Reset
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search me-1"></i>Apply Filters
+              </button>
+            </div>
+          </form>
+          
+          <!-- Active Filters Display -->
+          <div class="mt-3" *ngIf="hasActiveFilters()">
+            <hr>
+            <label class="form-label">Active Filters:</label>
+            <div class="active-filters">
+              <span class="badge bg-primary" *ngIf="filterForm.value.startDate || filterForm.value.endDate">
+                Date Range: {{ filterForm.value.startDate | date:'shortDate' }} - {{ filterForm.value.endDate | date:'shortDate' }}
+                <i class="fas fa-times-circle" (click)="clearDateFilter()"></i>
+              </span>
+              
+              <span class="badge bg-primary" *ngIf="selectedCategories.length > 0">
+                Categories: {{ selectedCategories.length }} selected
+                <i class="fas fa-times-circle" (click)="clearCategoryFilter()"></i>
+              </span>
+              
+              <span class="badge bg-primary" *ngIf="filterForm.value.minAmount || filterForm.value.maxAmount">
+                Amount: {{ filterForm.value.minAmount || '0' }} - {{ filterForm.value.maxAmount || '∞' }}
+                <i class="fas fa-times-circle" (click)="clearAmountFilter()"></i>
+              </span>
+              
+              <span class="badge bg-primary" *ngIf="filterForm.value.description">
+                Description: "{{ filterForm.value.description }}"
+                <i class="fas fa-times-circle" (click)="clearDescriptionFilter()"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Expenses Table -->
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th class="sortable" (click)="sortBy('date')">
+                    Date <i class="fas" [ngClass]="getSortIcon('date')"></i>
+                  </th>
+                  <th class="sortable" (click)="sortBy('description')">
+                    Description <i class="fas" [ngClass]="getSortIcon('description')"></i>
+                  </th>
+                  <th class="sortable" (click)="sortBy('amount')">
+                    Amount <i class="fas" [ngClass]="getSortIcon('amount')"></i>
+                  </th>
+                  <th class="sortable" (click)="sortBy('category')">
+                    Category <i class="fas" [ngClass]="getSortIcon('category')"></i>
+                  </th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let expense of dataSource.data">
+                  <td>{{ expense.date | date:'mediumDate' }}</td>
+                  <td>{{ expense.description }}</td>
+                  <td>{{ expense.amount | currency }}</td>
+                  <td>{{ expense.categoryName }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" (click)="editExpense(expense)">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" (click)="deleteExpense(expense)">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="dataSource.data.length === 0">
+                  <td colspan="5" class="text-center py-4">
+                    <div class="empty-state">
+                      <i class="fas fa-search mb-3"></i>
+                      <h5>No expenses found</h5>
+                      <p>Try adjusting your filters or add a new expense</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="pagination-info">
+              Showing {{ dataSource.data.length > 0 ? pageIndex * pageSize + 1 : 0 }} to {{ (pageIndex + 1) * pageSize < totalItems ? (pageIndex + 1) * pageSize : totalItems }} of {{ totalItems }} entries
+            </div>
+            <nav aria-label="Page navigation">
+              <ul class="pagination">
+                <li class="page-item" [ngClass]="{ 'disabled': pageIndex === 0 }">
+                  <a class="page-link" href="javascript:void(0)" (click)="goToPage(pageIndex - 1)">
+                    <i class="fas fa-chevron-left"></i>
+                  </a>
+                </li>
+                <li class="page-item" *ngFor="let page of getPaginationRange()" [ngClass]="{ 'active': pageIndex === page - 1 }">
+                  <a class="page-link" href="javascript:void(0)" (click)="goToPage(page - 1)">{{ page }}</a>
+                </li>
+                <li class="page-item" [ngClass]="{ 'disabled': pageIndex >= getTotalPages() - 1 }">
+                  <a class="page-link" href="javascript:void(0)" (click)="goToPage(pageIndex + 1)">
+                    <i class="fas fa-chevron-right"></i>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Expense Modal -->
+  <app-expense-modal 
+    *ngIf="showExpenseModal" 
+    [expenseId]="selectedExpenseId" 
+    (close)="handleModalClose($event)">
+  </app-expense-modal>
+</div>
