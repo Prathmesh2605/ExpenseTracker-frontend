@@ -1,61 +1,91 @@
-<mat-sidenav-container>
-  <mat-sidenav #sidenav [mode]="'side'" [opened]="true" class="app-sidenav">
-    <div class="sidenav-header">
-      <img src="assets/logo.png" alt="Expense Tracker" class="logo">
-      <h2>Expense Tracker</h2>
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar" [class.collapsed]="sidebarCollapsed">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z'/%3E%3Cpath d='m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z'/%3E%3Cpath d='M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0'/%3E%3Cpath d='M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5'/%3E%3C/svg%3E" alt="SVG Icon">
+        <h2 *ngIf="!sidebarCollapsed">Pulse</h2>
+      </div>
+      <button class="toggle-btn" (click)="toggleSidebar()">
+        <i class="fas" [class.fa-chevron-left]="!sidebarCollapsed" [class.fa-chevron-right]="sidebarCollapsed"></i>
+      </button>
     </div>
 
-    <mat-nav-list>
-      <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
-        <mat-icon>dashboard</mat-icon>
-        <span>Dashboard</span>
-      </a>
-      <a mat-list-item routerLink="/expenses" routerLinkActive="active">
-        <mat-icon>receipt</mat-icon>
-        <span>Expenses</span>
-      </a>
-      <a mat-list-item routerLink="/categories" routerLinkActive="active">
-        <mat-icon>category</mat-icon>
-        <span>Categories</span>
-      </a>
-      <a mat-list-item routerLink="/reports" routerLinkActive="active">
-        <mat-icon>bar_chart</mat-icon>
-        <span>Reports</span>
-      </a>
-    </mat-nav-list>
-  </mat-sidenav>
+    <div class="sidebar-menu">
+      <div class="menu-item" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <div class="menu-icon">
+          <i class="fas fa-tachometer-alt"></i>
+        </div>
+        <span class="menu-text" *ngIf="!sidebarCollapsed">Dashboard</span>
+      </div>
+      <div class="menu-item" routerLink="/expenses" routerLinkActive="active">
+        <div class="menu-icon">
+          <i class="fas fa-receipt"></i>
+        </div>
+        <span class="menu-text" *ngIf="!sidebarCollapsed">Expenses</span>
+      </div>
+      <div class="menu-item" routerLink="/categories" routerLinkActive="active">
+        <div class="menu-icon">
+          <i class="fas fa-tags"></i>
+        </div>
+        <span class="menu-text" *ngIf="!sidebarCollapsed">Categories</span>
+      </div>
+      <div class="menu-item" routerLink="/reports" routerLinkActive="active">
+        <div class="menu-icon">
+          <i class="fas fa-chart-bar"></i>
+        </div>
+        <span class="menu-text" *ngIf="!sidebarCollapsed">Reports</span>
+      </div>
+    </div>
 
-  <mat-sidenav-content>
-    <mat-toolbar color="primary">
-      <button mat-icon-button (click)="sidenav.toggle()">
-        <mat-icon>menu</mat-icon>
-      </button>
+    <div class="sidebar-footer">
+      <div class="menu-item" (click)="logout()">
+        <div class="menu-icon">
+          <i class="fas fa-sign-out-alt"></i>
+        </div>
+        <span class="menu-text" *ngIf="!sidebarCollapsed">Logout</span>
+      </div>
+    </div>
+  </div>
 
-      <span class="toolbar-spacer"></span>
+  <!-- Main Content -->
+  <div class="main-content" [class.expanded]="sidebarCollapsed">
+    <!-- Top Navigation -->
+    <div class="top-nav">
+      <div class="page-title">
+        <h1>{{ pageTitle }}</h1>
+      </div>
+      <div class="nav-actions">
+        <div class="user-menu" (click)="toggleUserMenu()" #userMenuTrigger>
+          <div class="user-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <span class="user-name">{{ getUserDisplayName() }}</span>
+          <i class="fas fa-chevron-down"></i>
+          
+          <!-- User Dropdown Menu -->
+          <div class="user-dropdown" *ngIf="userMenuOpen">
+            <div class="dropdown-item" routerLink="/profile">
+              <i class="fas fa-user-circle"></i>
+              <span>Profile</span>
+            </div>
+            <div class="dropdown-item" routerLink="/settings">
+              <i class="fas fa-cog"></i>
+              <span>Settings</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" (click)="logout()">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Logout</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <button mat-icon-button [matMenuTriggerFor]="userMenu">
-        <mat-icon>account_circle</mat-icon>
-      </button>
-
-      <mat-menu #userMenu="matMenu">
-        <button mat-menu-item routerLink="/profile">
-          <mat-icon>person</mat-icon>
-          <span>Profile</span>
-        </button>
-        <button mat-menu-item routerLink="/settings">
-          <mat-icon>settings</mat-icon>
-          <span>Settings</span>
-        </button>
-        <mat-divider></mat-divider>
-        <button mat-menu-item (click)="logout()">
-          <mat-icon>exit_to_app</mat-icon>
-          <span>Logout</span>
-        </button>
-      </mat-menu>
-    </mat-toolbar>
-
-    <div class="main-content">
+    <!-- Page Content -->
+    <div class="content-area">
       <router-outlet></router-outlet>
     </div>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+  </div>
+</div>

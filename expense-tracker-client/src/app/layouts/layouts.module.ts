@@ -14,8 +14,8 @@ import { AuthLayoutComponent } from './auth-layout/auth-layout.component';
 
 @NgModule({
   declarations: [
-    MainLayoutComponent,
-    AuthLayoutComponent
+    MainLayoutComponent
+    // AuthLayoutComponent is now standalone and should not be declared here
   ],
   imports: [
     CommonModule,
@@ -26,7 +26,9 @@ import { AuthLayoutComponent } from './auth-layout/auth-layout.component';
     MatButtonModule,
     MatListModule,
     MatMenuModule,
-    MatDividerModule
+    MatDividerModule,
+    // Import the standalone component
+    AuthLayoutComponent
   ],
   exports: [
     MainLayoutComponent,
