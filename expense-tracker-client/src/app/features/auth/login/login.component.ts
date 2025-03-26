@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
@@ -31,16 +31,17 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   isLoading = false;
   hidePassword = true;
+  errorMessage: string | null = null;
 
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
-    private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required]]
     });
   }
 
@@ -55,27 +56,35 @@ export class LoginComponent implements OnInit {
     window.location.href = '/auth/register';
   }
 
+  clearError(): void {
+    this.errorMessage = null;
+  }
+
   onSubmit(): void {
     if (this.loginForm.invalid) {
       return;
     }
 
+    // Reset state before attempting login
     this.isLoading = true;
+    this.errorMessage = null;
+    this.cdr.detectChanges(); 
+    
     this.authService.login(this.loginForm.value).subscribe({
-      next: (response) => {
+      next: () => {
+        this.isLoading = false; // Ensure loading is reset even on success
+        this.cdr.detectChanges(); 
         window.location.href = '/dashboard';
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Login error:', error);
-        this.snackBar.open(
-          error.error || 'Login failed. Please try again.',
-          'Close',
-          { duration: 5000 }
-        );
+        this.errorMessage = error.error?.message || error.error || 'Invalid email or password. Please try again.';
+        this.cdr.detectChanges(); 
       },
       complete: () => {
+        // This ensures loading state is always reset
         this.isLoading = false;
+        this.cdr.detectChanges(); 
       }
     });
   }

@@ -62,45 +62,14 @@ export class ExpenseService {
   }
 
   createExpense(request: ExpenseCreateRequest): Observable<Expense> {
-    const formData = new FormData();
-    formData.append('description', request.description);
-    formData.append('amount', request.amount.toString());
-    formData.append('date', request.date.toISOString());
-    formData.append('categoryId', request.categoryId);
-    formData.append('type', request.type);
-    formData.append('currency', request.currency);
-    formData.append('isRecurring', request.isRecurring.toString());
-    
-    if (request.note) {
-      formData.append('note', request.note);
-    }
-    
-    if (request.receipt) {
-      formData.append('receipt', request.receipt);
-    }
-
-    return this.http.post<Expense>(`${this.apiUrl}/expenses/create`, formData, {
+    return this.http.post<Expense>(`${this.apiUrl}/expenses/create`, request, {
       headers: this.getAuthHeaders()
     });
   }
 
   updateExpense(request: ExpenseUpdateRequest): Observable<Expense> {
-    const formData = new FormData();
-    formData.append('description', request.description);
-    formData.append('amount', request.amount.toString());
-    formData.append('date', request.date.toISOString());
-    formData.append('categoryId', request.categoryId);
-    
-    if (request.note) {
-      formData.append('note', request.note);
-    }
-    if (request.receipt) {
-      formData.append('receipt', request.receipt);
-    }
-
     const headers = this.getAuthHeaders();
-
-    return this.http.put<Expense>(`${this.apiUrl}/expenses/${request.id}`, formData, { headers });
+    return this.http.put<Expense>(`${this.apiUrl}/expenses/${request.id}`, request, { headers });
   }
 
   deleteExpense(id: string): Observable<void> {

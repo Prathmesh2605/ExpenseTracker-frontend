@@ -219,4 +219,11 @@
       </div>
     </div>
   </div>
+  
+  <!-- Expense Modal -->
+  <app-expense-modal 
+    *ngIf="showExpenseModal" 
+    [expenseId]="selectedExpenseId" 
+    (close)="handleModalClose($event)">
+  </app-expense-modal>
 </div>

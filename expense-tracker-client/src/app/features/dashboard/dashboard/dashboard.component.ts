@@ -1,4 +1,4 @@
-import { Component, type OnInit, ViewChild, ChangeDetectorRef } from "@angular/core"
+import { Component, type OnInit, ViewChild, ChangeDetectorRef, ElementRef, HostListener } from "@angular/core"
 import { ExpenseService } from "../../../core/services/expense.service"
 import { ExpenseSummary, Expense, CategoryBreakdown, MonthlyTotal } from "../../../core/models/expense.model"
 import { ChartConfiguration } from "chart.js"
@@ -71,6 +71,7 @@ export class DashboardComponent implements OnInit {
   totalPages = 1
   pageSize = 5
   currentDateRange: "week" | "month" | "quarter" | "halfYear" | "year" = "halfYear";
+  isDropdownOpen = false;
   
   // Category mapping
   private categoryColorChartMap: {[key: string]: string} = {};
@@ -219,9 +220,9 @@ export class DashboardComponent implements OnInit {
   constructor(
     private expenseService: ExpenseService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private elementRef: ElementRef
   ) {
-    // No need to initialize category mappings as they're now constants
   }
 
   getCategoryIcon(categoryId: string | undefined): string {
@@ -561,6 +562,18 @@ export class DashboardComponent implements OnInit {
     b = Math.max(0, Math.min(255, b + percent));
 
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+
+  toggleDropdown(): void {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const dropdownElement = this.elementRef.nativeElement.querySelector('.dropdown');
+    if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+      this.isDropdownOpen = false;
+    }
   }
 
   onCategoryChartClick(event: any): void {

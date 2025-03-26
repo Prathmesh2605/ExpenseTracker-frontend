@@ -8,6 +8,7 @@ export interface Expense {
   categoryId: string;
   categoryName: string;
   isRecurring: boolean;
+  notes?: string;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -27,7 +28,8 @@ export interface ExpenseCreateRequest {
   type: 'Income' | 'Expense';
   currency: string;
   isRecurring: boolean;
-  note?: string;
+  notes?: string;
+  recurrencePattern?: string;
   receipt?: File;
 }
 

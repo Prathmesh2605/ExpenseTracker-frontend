@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ExpenseService } from '../../../core/services/expense.service';
 import { Expense, ExpenseFilters, Category, PaginatedResponse } from '../../../core/models/expense.model';
+import { ExpenseModalComponent } from '../expense-modal/expense-modal.component';
 
 declare var bootstrap: any;
 
@@ -21,7 +22,8 @@ interface DataSource<T> {
     ReactiveFormsModule, 
     FormsModule,
     DatePipe,
-    CurrencyPipe
+    CurrencyPipe,
+    ExpenseModalComponent
   ]
 })
 export class ExpenseListComponent implements OnInit, AfterViewInit {
@@ -39,6 +41,8 @@ export class ExpenseListComponent implements OnInit, AfterViewInit {
   selectedCategories: string[] = [];
   dropdownInitialized = false;
   categoryDropdownOpen = false;
+  showExpenseModal = false;
+  selectedExpenseId: string | null = null;
 
   constructor(
     private expenseService: ExpenseService,
@@ -147,11 +151,13 @@ export class ExpenseListComponent implements OnInit, AfterViewInit {
   }
 
   createExpense(): void {
-    this.router.navigate(['/expenses/create']);
+    this.selectedExpenseId = null;
+    this.showExpenseModal = true;
   }
 
   editExpense(expense: Expense): void {
-    this.router.navigate(['/expenses/edit', expense.id]);
+    this.selectedExpenseId = expense.id;
+    this.showExpenseModal = true;
   }
 
   deleteExpense(expense: Expense): void {
@@ -330,5 +336,14 @@ export class ExpenseListComponent implements OnInit, AfterViewInit {
 
   clearDescriptionFilter(): void {
     this.filterForm.get('description')?.setValue('');
+  }
+
+  handleModalClose(success: boolean): void {
+    this.showExpenseModal = false;
+    this.selectedExpenseId = null;
+    
+    if (success) {
+      this.loadExpenses();
+    }
   }
 }
