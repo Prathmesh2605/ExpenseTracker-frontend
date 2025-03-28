@@ -14,6 +14,7 @@ export class MainLayoutComponent implements OnInit {
   userMenuOpen = false;
   pageTitle = 'Dashboard';
   currentUser: User | null = null;
+  isMobileView = false;
   
   @ViewChild('userMenuTrigger') userMenuTrigger!: ElementRef;
 
@@ -27,12 +28,25 @@ export class MainLayoutComponent implements OnInit {
     ).subscribe((event) => {
       this.updatePageTitle(event.url);
     });
+    
+    // Check if mobile view on init
+    this.checkScreenSize();
   }
 
   ngOnInit(): void {
     // Subscribe to the current user observable
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+    });
+    
+    // Add listener for navigation events to close sidebar on mobile when navigating
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      if (this.isMobileView && !this.sidebarCollapsed) {
+        this.sidebarCollapsed = true;
+        document.body.classList.remove('sidebar-open');
+      }
     });
   }
 
@@ -44,8 +58,21 @@ export class MainLayoutComponent implements OnInit {
     }
   }
 
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    this.checkScreenSize();
+  }
+  
   toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+    
+    // If on mobile and opening sidebar, we want to make sure it's fully visible
+    if (this.isMobileView && !this.sidebarCollapsed) {
+      // Add a class to prevent scrolling of the body when sidebar is open on mobile
+      document.body.classList.add('sidebar-open');
+    } else if (this.isMobileView) {
+      document.body.classList.remove('sidebar-open');
+    }
   }
 
   toggleUserMenu(): void {
@@ -80,6 +107,15 @@ export class MainLayoutComponent implements OnInit {
       this.pageTitle = 'Settings';
     } else {
       this.pageTitle = 'Dashboard';
+    }
+  }
+
+  private checkScreenSize() {
+    this.isMobileView = window.innerWidth < 576;
+    
+    // Auto-collapse sidebar on mobile
+    if (this.isMobileView && !this.sidebarCollapsed) {
+      this.sidebarCollapsed = true;
     }
   }
 }

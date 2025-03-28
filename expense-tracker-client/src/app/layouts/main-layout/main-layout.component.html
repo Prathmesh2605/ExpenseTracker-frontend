@@ -7,11 +7,11 @@
         <h2 *ngIf="!sidebarCollapsed">Pulse</h2>
       </div>
       <button class="toggle-btn" (click)="toggleSidebar()">
-        <i class="fas" [class.fa-chevron-left]="!sidebarCollapsed" [class.fa-chevron-right]="sidebarCollapsed"></i>
+        <i class="fas" [class.fa-chevron-left]="!sidebarCollapsed" [class.fa-chevron-right]="sidebarCollapsed" [class.fa-chevron-down]="!sidebarCollapsed && isMobileView" [class.fa-chevron-up]="sidebarCollapsed && isMobileView"></i>
       </button>
     </div>
 
-    <div class="sidebar-menu">
+    <div class="sidebar-menu" [class.expanded]="!sidebarCollapsed && isMobileView">
       <div class="menu-item" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
         <div class="menu-icon">
           <i class="fas fa-tachometer-alt"></i>
