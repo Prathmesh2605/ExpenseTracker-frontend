@@ -76,6 +76,17 @@
           border-top-right-radius: 0.5rem;
           border-bottom-right-radius: 0.5rem;
         }
+        
+        // Responsive button styles
+        @media (max-width: 767px) {
+          font-size: 0.8rem;
+          padding: 0.4rem 0.5rem;
+        }
+        
+        @media (max-width: 575px) {
+          font-size: 0.7rem;
+          padding: 0.3rem 0.4rem;
+        }
       }
     }
   }
@@ -152,6 +163,37 @@
 
     &:hover {
       background-color: rgba(0, 0, 0, 0.02);
+    }
+  }
+  
+  // Responsive table styles for mobile devices
+  @media (max-width: 767px) {
+    font-size: 0.9rem;
+    
+    th, td {
+      padding: 0.75rem 0.5rem;
+    }
+    
+    th:nth-child(4), td:nth-child(4) {
+      display: none; // Hide category column on very small screens
+    }
+  }
+  
+  // Extra small devices
+  @media (max-width: 575px) {
+    font-size: 0.85rem;
+    
+    th, td {
+      padding: 0.5rem 0.25rem;
+    }
+    
+    th:last-child, td:last-child {
+      width: 80px; // Make actions column narrower
+    }
+    
+    .btn-sm {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.7rem;
     }
   }
 }
@@ -270,6 +312,42 @@
     th, td {
       padding: 0.75rem;
     }
+  }
+}
+
+// Additional responsive styles
+@media (max-width: 767px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    
+    div:last-child {
+      margin-top: 1rem;
+      align-self: flex-end;
+    }
+  }
+  
+  .table-responsive {
+    margin: 0 -0.75rem; // Negative margin to allow more space
+  }
+  
+  .active-filters .badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .card .card-body {
+    padding: 1rem;
+  }
+  
+  .filter-card .filter-header {
+    padding: 1rem;
+  }
+  
+  .dashboard-header h2 {
+    font-size: 1.5rem;
   }
 }
 

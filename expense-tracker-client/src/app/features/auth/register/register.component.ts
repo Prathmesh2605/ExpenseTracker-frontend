@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
@@ -34,21 +34,30 @@ export class RegisterComponent {
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
-    private snackBar: MatSnackBar
+    private cdRef: ChangeDetectorRef
   ) {
+
     this.registerForm = this.formBuilder.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
-    });
+    }, { updateOn: 'change' });
   }
 
   navigateToLogin() {
     window.location.href = '/auth/login';
   }
 
+  onInputChange() {
+    this.registerForm.updateValueAndValidity();
+    this.cdRef.detectChanges(); 
+  }
+
   onSubmit(): void {
+    // Mark all form controls as touched to trigger validation messages
+    this.markFormGroupTouched(this.registerForm);
+    
     if (this.registerForm.invalid) {
       return;
     }
@@ -56,22 +65,25 @@ export class RegisterComponent {
     this.isLoading = true;
     this.authService.register(this.registerForm.value).subscribe({
       next: () => {
-        this.snackBar.open('Registration successful! Please log in.', 'Close', {
-          duration: 5000
-        });
-        // Force a complete reload to the login page after successful registration
         window.location.href = '/auth/login';
       },
       error: (error) => {
         this.isLoading = false;
-        this.snackBar.open(
-          error.error || 'Registration failed. Please try again.',
-          'Close',
-          { duration: 5000 }
-        );
       },
       complete: () => {
         this.isLoading = false;
+      }
+    });
+  }
+
+  // Helper method to mark all controls in a form group as touched
+  private markFormGroupTouched(formGroup: FormGroup) {
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
+      
+      // If control is dirty and valid, this will ensure error messages are hidden
+      if (control.valid) {
+        control.updateValueAndValidity();
       }
     });
   }

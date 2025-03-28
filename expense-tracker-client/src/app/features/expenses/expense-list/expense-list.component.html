@@ -168,7 +168,7 @@
                 <tr *ngFor="let expense of dataSource.data">
                   <td>{{ expense.date | date:'mediumDate' }}</td>
                   <td>{{ expense.description }}</td>
-                  <td>{{ expense.amount | currency }}</td>
+                  <td>{{ expense.amount | currency:expense.currency }}</td>
                   <td>{{ expense.categoryName }}</td>
                   <td>
                     <button class="btn btn-sm btn-outline-primary me-1" (click)="editExpense(expense)">

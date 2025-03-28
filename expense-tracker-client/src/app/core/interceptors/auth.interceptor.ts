@@ -60,23 +60,29 @@ export class AuthInterceptor implements HttpInterceptor {
 
       if (refreshToken) {
         return this.authService.refreshToken(refreshToken).pipe(
-          switchMap(() => {
+          switchMap((response) => {
             this.isRefreshing = false;
             const newToken = this.authService.getStoredToken();
             return next.handle(this.addToken(request, newToken!));
           }),
-          catchError((error) => {
+          catchError((refreshError) => {
             this.isRefreshing = false;
+            // Log the user out if token refresh fails
+            console.log('Token refresh failed, logging out user');
             this.authService.logout();
-            this.router.navigate(['/auth/login']);
-            return throwError(() => error);
+            return throwError(() => new Error('Session expired. Please login again.'));
           })
         );
+      } else {
+        // No refresh token available, log the user out immediately
+        this.isRefreshing = false;
+        console.log('No refresh token found, logging out user');
+        this.authService.logout();
+        return throwError(() => new Error('Authentication required. Please login.'));
       }
     }
 
-    this.authService.logout();
-    this.router.navigate(['/auth/login']);
-    return throwError(() => new Error('Session expired'));
+    // If already refreshing, just return an error
+    return throwError(() => new Error('Authentication in progress...'));
   }
 }
