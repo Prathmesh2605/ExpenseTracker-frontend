@@ -46,7 +46,6 @@ jobs:
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_FOREST_0E3F1D810 }}
           action: "upload"
           ###### Repository/Build Configurations ######
           # These paths are relative to the root of the repository
