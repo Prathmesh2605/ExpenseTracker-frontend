@@ -22,20 +22,25 @@ jobs:
         with:
           submodules: true
           lfs: false
-          
+
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18 # Use the Node.js version compatible with your project
 
       - name: Install Dependencies
-        run: npm ci # Ensures clean and consistent dependency installation
+        # Specify the working directory for npm commands
+        working-directory: ./expense-tracker-client
+        run: npm ci # Ensures clean and consistent dependency installation based on package-lock.json
 
-      - name: Install Angular CLI
-        run: npm install -g @angular/cli
+      # Remove this step - Angular CLI should be used from local devDependencies
+      # - name: Install Angular CLI
+      #   run: npm install -g @angular/cli
 
       - name: Build Angular App
-        run: npm run build
+        # Specify the working directory for the build command
+        working-directory: ./expense-tracker-client
+        run: npm run build # This uses the Angular CLI installed locally by npm ci
 
       - name: Build And Deploy
         id: builddeploy
@@ -43,12 +48,16 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_FOREST_0E3F1D810 }}
           action: "upload"
-          app_location: "/expense-tracker-client"
-          api_location: ""
-          output_location: "dist/expense-tracker-client" # Ensure correct output directory
-          github_id_token: ${{ steps.idtoken.outputs.result }}
-
+          ###### Repository/Build Configurations ######
+          # These paths are relative to the root of the repository
+          app_location: "expense-tracker-client" # Correct path to app source code
+          api_location: "" # No API in this repo/build
+          output_location: "expense-tracker-client/dist/expense-tracker-client" # Correct path to build output, relative to root
+          # Note: Removed github_id_token as it's usually not needed with API token auth
+          # If using managed identity, you might need it - consult SWA docs for your auth method
           ###### End of Repository/Build Configurations ######
+
+  # ... rest of your workflow (close_pull_request_job) ...
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
