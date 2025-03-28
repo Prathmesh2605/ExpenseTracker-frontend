@@ -30,33 +30,27 @@ jobs:
 
       - name: Install Dependencies
         # Specify the working directory for npm commands
-        working-directory: ./expense-tracker-client
+        working-directory: ./frontend/expense-tracker-client
         run: npm ci # Ensures clean and consistent dependency installation based on package-lock.json
-
-      # Remove this step - Angular CLI should be used from local devDependencies
-      # - name: Install Angular CLI
-      #   run: npm install -g @angular/cli
 
       - name: Build Angular App
         # Specify the working directory for the build command
-        working-directory: ./expense-tracker-client
+        working-directory: ./frontend/expense-tracker-client
         run: npm run build # This uses the Angular CLI installed locally by npm ci
 
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_FOREST_0E3F1D810 }}
           action: "upload"
           ###### Repository/Build Configurations ######
           # These paths are relative to the root of the repository
-          app_location: "expense-tracker-client" # Correct path to app source code
+          app_location: "frontend/expense-tracker-client" # Correct path to app source code
           api_location: "" # No API in this repo/build
-          output_location: "expense-tracker-client/dist/expense-tracker-client" # Correct path to build output, relative to root
-          # Note: Removed github_id_token as it's usually not needed with API token auth
-          # If using managed identity, you might need it - consult SWA docs for your auth method
+          output_location: "dist/expense-tracker-client" # Path is relative to the app_location
           ###### End of Repository/Build Configurations ######
 
-  # ... rest of your workflow (close_pull_request_job) ...
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
