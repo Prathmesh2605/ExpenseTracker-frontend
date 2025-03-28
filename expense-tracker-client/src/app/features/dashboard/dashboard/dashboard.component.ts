@@ -325,10 +325,6 @@ export class DashboardComponent implements OnInit {
           }));
         }
 
-        if (!summary.monthlyTotals || summary.monthlyTotals.length === 0) {
-          this.createMockMonthlyData(summary);
-        }
-
         if (summary.monthlyTotals?.length) {
           this.updateMonthlyChart(summary.monthlyTotals);
         }
@@ -343,26 +339,6 @@ export class DashboardComponent implements OnInit {
         this.isLoading = false;
       }
     });
-  }
-
-  private createMockMonthlyData(summary: ExpenseSummary): void {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    summary.monthlyTotals = [];
-    for (let i = 5; i >= 0; i--) {
-      const month = (currentMonth - i + 12) % 12 + 1;
-      const year = currentMonth - i < 0 ? currentYear - 1 : currentYear;
-      
-      const amount = summary.totalAmount / 6 * (0.8 + Math.random() * 0.4);
-      
-      summary.monthlyTotals.push({
-        month,
-        year,
-        amount
-      });
-    }
   }
 
   private updateMonthlyChart(monthlyTotals: MonthlyTotal[] | undefined): void {

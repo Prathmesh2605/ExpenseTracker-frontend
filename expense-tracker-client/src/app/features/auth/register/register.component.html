@@ -32,15 +32,15 @@
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
       <!-- First Name Field -->
       <div class="mb-3">
-        <input type="text" class="form-control" placeholder="First Name" formControlName="firstName">
+        <input type="text" class="form-control" placeholder="First Name" formControlName="firstName" (input)="onInputChange()">
         <small class="text-danger" *ngIf="registerForm.get('firstName')?.invalid && (registerForm.get('firstName')?.dirty || registerForm.get('firstName')?.touched)">
-          <span *ngIf="registerForm.get('firstName')?.hasError('required')">First name is required.</span>
+          <span *ngIf="registerForm.get('firstName')?.invalid && (registerForm.get('firstName')?.dirty || registerForm.get('firstName')?.touched)">First name is required.</span>
         </small>
       </div>
 
       <!-- Last Name Field -->
       <div class="mb-3">
-        <input type="text" class="form-control" placeholder="Last Name" formControlName="lastName">
+        <input type="text" class="form-control" placeholder="Last Name" formControlName="lastName" (input)="onInputChange()">
         <small class="text-danger" *ngIf="registerForm.get('lastName')?.invalid && (registerForm.get('lastName')?.dirty || registerForm.get('lastName')?.touched)">
           <span *ngIf="registerForm.get('lastName')?.hasError('required')">Last name is required.</span>
         </small>
@@ -48,7 +48,7 @@
 
       <!-- Email Field -->
       <div class="mb-3">
-        <input type="email" class="form-control" placeholder="Email" formControlName="email">
+        <input type="email" class="form-control" placeholder="Email" formControlName="email" (input)="onInputChange()">
         <small class="text-danger" *ngIf="registerForm.get('email')?.invalid && (registerForm.get('email')?.dirty || registerForm.get('email')?.touched)">
           <span *ngIf="registerForm.get('email')?.hasError('required')">Email is required.</span>
           <span *ngIf="registerForm.get('email')?.hasError('email')">Invalid email format.</span>
@@ -57,7 +57,7 @@
 
       <!-- Password Field -->
       <div class="mb-4">
-        <input type="password" class="form-control" placeholder="Password" formControlName="password">
+        <input type="password" class="form-control" placeholder="Password" formControlName="password" (input)="onInputChange()">
         <small class="text-danger" *ngIf="registerForm.get('password')?.invalid && (registerForm.get('password')?.dirty || registerForm.get('password')?.touched)">
           <span *ngIf="registerForm.get('password')?.hasError('required')">Password is required.</span>
           <span *ngIf="registerForm.get('password')?.hasError('minlength')">Password must be at least 6 characters.</span>
