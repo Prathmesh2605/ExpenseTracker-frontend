@@ -351,7 +351,7 @@ export class DashboardComponent implements OnInit {
   private updateMonthlyChart(monthlyTotals: MonthlyTotal[] | undefined): void {
     if (!monthlyTotals?.length) {
       this.setNoDataChart(this.monthlyChartData);
-      return;
+            return;
     }
     
     const sortedMonthlyTotals = [...monthlyTotals].sort((a, b) => 
@@ -373,8 +373,8 @@ export class DashboardComponent implements OnInit {
     
     this.monthlyChartData.datasets[0].backgroundColor = backgroundColors;
     this.monthlyChartData.datasets[0].hoverBackgroundColor = backgroundColors.map(color => this.adjustColorBrightness(color, -15));
-    
-    this.updateChart();
+
+    this.cdr.detectChanges(); // Trigger change detection
   }
 
   private fillMissingMonths(monthlyTotals: MonthlyTotal[]): MonthlyTotal[] {
@@ -412,6 +412,7 @@ export class DashboardComponent implements OnInit {
   private updateCategoryChart(categoryBreakdown: CategoryBreakdown[] | undefined): void {
     if (!categoryBreakdown?.length) {
       this.setNoDataChart(this.categoryChartData);
+      this.cdr.detectChanges(); // Trigger change detection
       return;
     }
     
@@ -437,11 +438,21 @@ export class DashboardComponent implements OnInit {
       colors.push('#CBD5E1'); // Light gray for 'Other'
     }
     
-    this.categoryChartData.labels = labels;
-    this.categoryChartData.datasets[0].data = data;
-    this.categoryChartData.datasets[0].backgroundColor = colors;
-    
-    this.updateChart();
+    // Create new objects for change detection
+    this.categoryChartData = {
+      ...this.categoryChartData,
+      labels: labels,
+      datasets: [
+        {
+          ...this.categoryChartData.datasets[0], // Spread existing dataset options
+          data: data,
+          backgroundColor: colors,
+          hoverBackgroundColor: colors.map(color => this.adjustColorBrightness(color, -15))
+        }
+      ]
+    };
+
+    this.cdr.detectChanges(); // Trigger change detection
   }
 
   private loadRecentExpenses(startDate: Date, endDate: Date): void {
@@ -505,25 +516,17 @@ export class DashboardComponent implements OnInit {
   private resetChartData(): void {
     this.setNoDataChart(this.categoryChartData);
     this.setNoDataChart(this.monthlyChartData);
+    this.cdr.detectChanges(); // Trigger change detection
   }
 
   private setNoDataChart(chartData: ChartConfiguration['data']): void {
+    const defaultColor = this.colorPalette[0] || '#000000'; // Fallback color
+    const isArrayBg = Array.isArray(chartData.datasets[0].backgroundColor);
+    
     chartData.labels = ['No Data'];
     chartData.datasets[0].data = [0];
-    if (Array.isArray(chartData.datasets[0].backgroundColor)) {
-      chartData.datasets[0].backgroundColor = [this.colorPalette[0]];
-    } else {
-      chartData.datasets[0].backgroundColor = this.colorPalette[0];
-    }
-    this.updateChart();
-  }
-
-  private updateChart(): void {
-    setTimeout(() => {
-      if (this.chart?.chart) {
-        this.chart.chart.update();
-      }
-    });
+    chartData.datasets[0].backgroundColor = isArrayBg ? [defaultColor] : defaultColor;
+    chartData.datasets[0].hoverBackgroundColor = isArrayBg ? [defaultColor] : defaultColor;
   }
 
   private formatCurrency(value: number, fractionDigits: number = 2): string {
