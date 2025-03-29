@@ -3,7 +3,8 @@
   <div class="dashboard-header mb-4">
     <div>
       <h1 class="dashboard-title">Dashboard</h1>
-      <p class="dashboard-subtitle">Your financial overview at a glance</p>
+      <p class="dashboard-subtitle" *ngIf="currentUser?.firstName">Welcome, {{currentUser?.firstName}}! Here's your financial overview at a glance</p>
+      <p class="dashboard-subtitle" *ngIf="!currentUser?.firstName">Your financial overview at a glance</p>
     </div>
     <div class="date-filter">
       <div class="dropdown" #dateDropdown>
