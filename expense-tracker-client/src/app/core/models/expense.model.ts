@@ -52,9 +52,11 @@ export interface ExpenseFilters {
 }
 
 export interface ExpenseSummary {
-  totalAmount: number;
+  totalIncomeAmount: number;
+  totalExpenseAmount: number;
   totalCount: number;
-  averageAmount: number;
+  averageIncomeAmount: number;
+  averageExpenseAmount: number;
   monthlyTotals: MonthlyTotal[];
   categoryBreakdown: CategoryBreakdown[];
   categorySummaries: CategorySummary[];
