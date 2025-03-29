@@ -58,6 +58,71 @@ export class AuthService {
     );
   }
 
+  updateProfile(profileData: { email: string, firstName: string, lastName: string, currency: string }): Observable<any> {
+    const token = this.getStoredToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    // Construct the URL with query parameters
+    const url = `${environment.apiUrl}/api/UserProfile?FirstName=${encodeURIComponent(profileData.firstName)}&LastName=${encodeURIComponent(profileData.lastName)}&PreferredCurrency=${encodeURIComponent(profileData.currency)}`;
+
+    return this.http.put<any>(url, {}, { headers }).pipe(
+      tap(response => {
+        // Update the stored user data
+        const currentUser = this.currentUserSubject.value;
+        if (currentUser) {
+          const updatedUser: User = {
+            ...currentUser,
+            email: profileData.email, // Email is not updated via API but keep it in sync locally
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            currency: profileData.currency
+          };
+          localStorage.setItem(this.userKey, JSON.stringify(updatedUser));
+          this.currentUserSubject.next(updatedUser);
+        }
+      })
+    );
+  }
+
+  getUserProfile(): Observable<any> {
+    const token = this.getStoredToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    return this.http.get<any>(`${environment.apiUrl}/api/UserProfile`, { headers }).pipe(
+      tap(userProfile => {
+        // Update the stored user data with the latest from the server
+        if (userProfile) {
+          const updatedUser: User = {
+            id: userProfile.id,
+            username: userProfile.email, // Using email as username if not provided
+            email: userProfile.email,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            currency: userProfile.currency
+          };
+          localStorage.setItem(this.userKey, JSON.stringify(updatedUser));
+          this.currentUserSubject.next(updatedUser);
+        }
+      })
+    );
+  }
+
+  changePassword(passwordData: { currentPassword: string, newPassword: string, confirmPassword: string }): Observable<any> {
+    const token = this.getStoredToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    return this.http.post<any>(`${this.apiUrl}/change-password`, passwordData, { headers });
+  }
+
   getStoredToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }

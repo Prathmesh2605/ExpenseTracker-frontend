@@ -22,6 +22,17 @@ export const routes: Routes = [
       }
     ]
   },
+  {
+    path: 'profile',
+    component: MainLayoutComponent,
+    canActivate: [AuthGuard],
+    children: [
+      {
+        path: '',
+        loadChildren: () => import('./features/profile/profile.module').then(m => m.ProfileModule)
+      }
+    ]
+  },
   { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
   { path: '**', redirectTo: 'auth/login' }  // Handle unknown routes
 ];
