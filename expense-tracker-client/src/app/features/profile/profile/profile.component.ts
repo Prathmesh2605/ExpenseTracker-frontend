@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-profile',
@@ -12,6 +13,7 @@ export class ProfileComponent implements OnInit {
   profileForm: FormGroup;
   passwordForm: FormGroup;
   isLoading = false;
+  currencies = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
   constructor(
     private fb: FormBuilder,
@@ -21,7 +23,8 @@ export class ProfileComponent implements OnInit {
     this.profileForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       firstName: ['', Validators.required],
-      lastName: ['', Validators.required]
+      lastName: ['', Validators.required],
+      currency: ['INR', Validators.required]
     });
 
     this.passwordForm = this.fb.group({
@@ -36,47 +39,57 @@ export class ProfileComponent implements OnInit {
   }
 
   loadUserProfile(): void {
-    this.authService.currentUser$.subscribe(user => {
-      if (user) {
-        this.profileForm.patchValue({
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName
-        });
-      }
-    });
+    this.isLoading = true;
+    this.authService.getUserProfile()
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (userProfile) => {
+          this.profileForm.patchValue({
+            email: userProfile.email,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            currency: userProfile.currency || 'USD'
+          });
+        },
+        error: (error) => {
+          console.error('Error loading user profile:', error);
+          this.snackBar.open('Failed to load user profile', 'Close', { duration: 3000 });
+        }
+      });
   }
 
   onUpdateProfile(): void {
     if (this.profileForm.valid) {
       this.isLoading = true;
-      this.authService.updateProfile(this.profileForm.value).subscribe({
-        next: () => {
-          this.snackBar.open('Profile updated successfully', 'Close', { duration: 3000 });
-          this.isLoading = false;
-        },
-        error: () => {
-          this.snackBar.open('Error updating profile', 'Close', { duration: 3000 });
-          this.isLoading = false;
-        }
-      });
+      this.authService.updateProfile(this.profileForm.value)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: () => {
+            this.snackBar.open('Profile updated successfully', 'Close', { duration: 3000 });
+          },
+          error: (error) => {
+            console.error('Error updating profile:', error);
+            this.snackBar.open('Error updating profile', 'Close', { duration: 3000 });
+          }
+        });
     }
   }
 
   onChangePassword(): void {
     if (this.passwordForm.valid) {
       this.isLoading = true;
-      this.authService.changePassword(this.passwordForm.value).subscribe({
-        next: () => {
-          this.snackBar.open('Password changed successfully', 'Close', { duration: 3000 });
-          this.passwordForm.reset();
-          this.isLoading = false;
-        },
-        error: () => {
-          this.snackBar.open('Error changing password', 'Close', { duration: 3000 });
-          this.isLoading = false;
-        }
-      });
+      this.authService.changePassword(this.passwordForm.value)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: () => {
+            this.snackBar.open('Password changed successfully', 'Close', { duration: 3000 });
+            this.passwordForm.reset();
+          },
+          error: (error) => {
+            console.error('Error changing password:', error);
+            this.snackBar.open('Error changing password', 'Close', { duration: 3000 });
+          }
+        });
     }
   }
 
