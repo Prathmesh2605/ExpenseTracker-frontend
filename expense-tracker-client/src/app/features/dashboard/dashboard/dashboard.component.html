@@ -3,7 +3,8 @@
   <div class="dashboard-header mb-4">
     <div>
       <h1 class="dashboard-title">Dashboard</h1>
-      <p class="dashboard-subtitle">Your financial overview at a glance</p>
+      <p class="dashboard-subtitle" *ngIf="currentUser?.firstName">Welcome, {{currentUser?.firstName}}! Here's your financial overview at a glance</p>
+      <p class="dashboard-subtitle" *ngIf="!currentUser?.firstName">Your financial overview at a glance</p>
     </div>
     <div class="date-filter">
       <div class="dropdown" #dateDropdown>
@@ -32,8 +33,17 @@
               <i class="fas fa-dollar-sign"></i>
             </div>
             <div class="summary-details">
-              <div class="summary-title">Total Expenses</div>
-              <div class="summary-value">{{summary?.totalAmount | currency}}</div>
+              <div class="summary-title">Total Transactions</div>
+              <div class="summary-value">
+                <div class="d-flex flex-column">
+                  <small class="text-success mb-1">
+                    <i class="fas fa-arrow-up me-1"></i>{{summary?.totalIncomeAmount | currency: currentUser?.currency}}
+                  </small>
+                  <small class="text-danger">
+                    <i class="fas fa-arrow-down me-1"></i>{{summary?.totalExpenseAmount | currency: currentUser?.currency}}
+                  </small>
+                </div>
+              </div>
               <div class="summary-change">
                 <span class="text-muted">Current period</span>
               </div>
@@ -53,7 +63,7 @@
               <div class="summary-title">Categories</div>
               <div class="summary-value">{{summary?.categorySummaries?.length || 0}}</div>
               <div class="summary-change">
-                <span class="text-muted">Active expense categories</span>
+                <span class="text-muted">Active categories</span>
               </div>
             </div>
           </div>
@@ -69,9 +79,15 @@
             </div>
             <div class="summary-details">
               <div class="summary-title">Monthly Average</div>
-              <div class="summary-value">{{summary?.averageAmount | currency}}</div>
-              <div class="summary-change">
-                <span class="text-muted">Based on selected period</span>
+              <div class="summary-value">
+                <div class="d-flex flex-column">
+                  <small class="text-success mb-1">
+                    <i class="fas fa-arrow-up me-1"></i>{{summary?.averageIncomeAmount | currency: currentUser?.currency}}
+                  </small>
+                  <small class="text-danger">
+                    <i class="fas fa-arrow-down me-1"></i>{{summary?.averageExpenseAmount | currency: currentUser?.currency}}
+                  </small>
+                </div>
               </div>
             </div>
           </div>
@@ -89,7 +105,7 @@
               <div class="summary-title">Transactions</div>
               <div class="summary-value">{{summary?.totalCount || 0}}</div>
               <div class="summary-change">
-                <span class="text-muted">Total transactions</span>
+                <span class="text-muted">Total count</span>
               </div>
             </div>
           </div>

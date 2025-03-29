@@ -5,6 +5,8 @@ import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ExpenseService } from '../../../core/services/expense.service';
 import { Expense, ExpenseFilters, Category, PaginatedResponse } from '../../../core/models/expense.model';
 import { ExpenseModalComponent } from '../expense-modal/expense-modal.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { User } from '../../../core/models/auth.model';
 
 declare var bootstrap: any;
 
@@ -43,12 +45,18 @@ export class ExpenseListComponent implements OnInit, AfterViewInit {
   categoryDropdownOpen = false;
   showExpenseModal = false;
   selectedExpenseId: string | null = null;
+  currentUser: User | null = null;
 
   constructor(
     private expenseService: ExpenseService,
     private router: Router,
-    private fb: FormBuilder
-  ) {}
+    private fb: FormBuilder,
+    private authService: AuthService
+  ) {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
+  }
 
   ngOnInit(): void {
     this.initFilterForm();

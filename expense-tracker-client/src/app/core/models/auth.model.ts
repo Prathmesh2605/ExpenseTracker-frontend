@@ -11,12 +11,10 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
+  user: any;
   token: string;
   refreshToken: string;
   expiresIn: number;
-  userId: string;
-  username: string;
-  email: string;
 }
 
 export interface User {

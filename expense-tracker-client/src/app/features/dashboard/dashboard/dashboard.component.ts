@@ -4,6 +4,8 @@ import { ExpenseSummary, Expense, CategoryBreakdown, MonthlyTotal } from "../../
 import { ChartConfiguration } from "chart.js"
 import { BaseChartDirective } from "ng2-charts"
 import { Router } from "@angular/router"
+import { AuthService } from "../../../core/services/auth.service"
+import { User } from "../../../core/models/auth.model"
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -72,6 +74,7 @@ export class DashboardComponent implements OnInit {
   pageSize = 5
   currentDateRange: "week" | "month" | "quarter" | "halfYear" | "year" = "halfYear";
   isDropdownOpen = false;
+  currentUser: User | undefined;
   
   // Category mapping
   private categoryColorChartMap: {[key: string]: string} = {};
@@ -221,8 +224,12 @@ export class DashboardComponent implements OnInit {
     private expenseService: ExpenseService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private authService: AuthService
   ) {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user || undefined;
+    });
   }
 
   getCategoryIcon(categoryId: string | undefined): string {
@@ -522,7 +529,7 @@ export class DashboardComponent implements OnInit {
   private formatCurrency(value: number, fractionDigits: number = 2): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: this.currentUser?.currency || 'INR',
       minimumFractionDigits: fractionDigits,
       maximumFractionDigits: fractionDigits
     }).format(value);

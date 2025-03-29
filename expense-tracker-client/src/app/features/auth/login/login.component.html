@@ -37,7 +37,7 @@
           
           <!-- Email Field -->
           <div class="mb-3">
-              <input type="email" class="form-control" placeholder="Enter your email" formControlName="email">
+              <input type="email" class="form-control" placeholder="Enter your email" formControlName="email" (input)="onInputChange()">
               <small class="text-danger" *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)">
                   <span *ngIf="loginForm.get('email')?.hasError('required')">Email is required.</span>
                   <span *ngIf="loginForm.get('email')?.hasError('email')">Invalid email format.</span>
@@ -46,7 +46,7 @@
 
           <!-- Password Field -->
           <div class="mb-3">
-              <input type="password" class="form-control" placeholder="Enter your password" formControlName="password">
+              <input type="password" class="form-control" placeholder="Enter your password" formControlName="password" (input)="onInputChange()">
               <small class="text-danger" *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)">
                   <span *ngIf="loginForm.get('password')?.hasError('required')">Password is required.</span>
               </small>
