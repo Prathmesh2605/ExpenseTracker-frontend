@@ -79,7 +79,8 @@ export class AuthService {
       username: response.user.username,
       email: response.user.email,
       firstName: response.user.firstName,
-      lastName: response.user.lastName
+      lastName: response.user.lastName,
+      currency: response.user.preferredCurrency
     };
     
     localStorage.setItem(this.userKey, JSON.stringify(user));

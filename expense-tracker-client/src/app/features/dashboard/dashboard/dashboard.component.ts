@@ -529,7 +529,7 @@ export class DashboardComponent implements OnInit {
   private formatCurrency(value: number, fractionDigits: number = 2): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: this.currentUser?.currency || 'INR',
       minimumFractionDigits: fractionDigits,
       maximumFractionDigits: fractionDigits
     }).format(value);

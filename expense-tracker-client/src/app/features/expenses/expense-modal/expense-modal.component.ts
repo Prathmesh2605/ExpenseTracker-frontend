@@ -4,6 +4,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { ExpenseService } from '../../../core/services/expense.service';
 import { Category, Expense, ExpenseCreateRequest, ExpenseUpdateRequest } from '../../../core/models/expense.model';
 import { catchError, finalize, of } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
+import { User } from '../../../core/models/auth.model';
 
 @Component({
   selector: 'app-expense-modal',
@@ -26,13 +28,18 @@ export class ExpenseModalComponent implements OnInit {
   isEditMode = false;
   currentStep = 1;
   totalSteps = 4;
+  currentUser: User | null = null;
   
   constructor(
     private fb: FormBuilder,
-    private expenseService: ExpenseService
+    private expenseService: ExpenseService,
+    private authService: AuthService
   ) {}
   
   ngOnInit(): void {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user || null;
+    });
     this.initForm();
     this.loadCategories();
     
@@ -49,10 +56,13 @@ export class ExpenseModalComponent implements OnInit {
       date: [new Date(), Validators.required],
       categoryId: ['', Validators.required],
       type: ['Expense', Validators.required],
-      currency: ['USD', Validators.required],
+      currency: [this.currentUser?.currency, Validators.required],
       notes: [''],
       isRecurring: [false]
     });
+    if (this.currentUser?.currency) {
+      this.expenseForm.get('currency')?.disable();
+    }
   }
   
   loadCategories(): void {
@@ -128,7 +138,7 @@ export class ExpenseModalComponent implements OnInit {
         date: formValue.date,
         categoryId: formValue.categoryId,
         type: formValue.type,
-        currency: formValue.currency,
+        currency: this.currentUser?.currency || formValue.currency,
         isRecurring: formValue.isRecurring,
         notes: formValue.notes
       };
@@ -153,7 +163,7 @@ export class ExpenseModalComponent implements OnInit {
         date: formValue.date,
         categoryId: formValue.categoryId,
         type: formValue.type,
-        currency: formValue.currency,
+        currency: this.currentUser?.currency || formValue.currency,
         isRecurring: formValue.isRecurring,
         notes: formValue.notes
       };
@@ -196,7 +206,7 @@ export class ExpenseModalComponent implements OnInit {
     
     switch (this.currentStep) {
       case 1: // Basic Info
-        return controls['description'].valid && controls['amount'].valid && controls['currency'].valid;
+        return controls['description'].valid && controls['amount'].valid;
       case 2: // Date and Category
         return controls['date'].valid && controls['categoryId'].valid;
       case 3: // Type and Recurring
