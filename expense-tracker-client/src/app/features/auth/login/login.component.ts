@@ -88,4 +88,9 @@ export class LoginComponent implements OnInit {
       }
     });
   }
+
+  onInputChange() {
+    this.loginForm.updateValueAndValidity();
+    this.cdr.detectChanges(); 
+  }
 }
