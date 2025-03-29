@@ -351,7 +351,8 @@ export class DashboardComponent implements OnInit {
   private updateMonthlyChart(monthlyTotals: MonthlyTotal[] | undefined): void {
     if (!monthlyTotals?.length) {
       this.setNoDataChart(this.monthlyChartData);
-            return;
+      this.cdr.detectChanges(); // Trigger change detection
+      return;
     }
     
     const sortedMonthlyTotals = [...monthlyTotals].sort((a, b) => 
@@ -360,19 +361,31 @@ export class DashboardComponent implements OnInit {
     
     const filledMonthlyTotals = this.fillMissingMonths(sortedMonthlyTotals);
     
-    this.monthlyChartData.labels = filledMonthlyTotals.map((m) =>
+    const newLabels = filledMonthlyTotals.map((m) =>
       new Date(m.year, m.month - 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" })
     );
-    this.monthlyChartData.datasets[0].data = filledMonthlyTotals.map((m) => m.amount);
+    const newData = filledMonthlyTotals.map((m) => m.amount);
     
-    const maxAmount = Math.max(...filledMonthlyTotals.map(m => m.amount));
+    const maxAmount = Math.max(...newData, 0); // Ensure maxAmount is not -Infinity for empty data
     const backgroundColors: string[] = filledMonthlyTotals.map((m) => {
-      const colorIndex = Math.min(Math.floor((m.amount / maxAmount) * this.colorPalette.length), this.colorPalette.length - 1);
+      const colorIndex = maxAmount > 0 ? Math.min(Math.floor((m.amount / maxAmount) * this.colorPalette.length), this.colorPalette.length - 1) : 0;
       return this.colorPalette[colorIndex] || this.colorPalette[0];
     });
-    
-    this.monthlyChartData.datasets[0].backgroundColor = backgroundColors;
-    this.monthlyChartData.datasets[0].hoverBackgroundColor = backgroundColors.map(color => this.adjustColorBrightness(color, -15));
+    const hoverBackgroundColors = backgroundColors.map(color => this.adjustColorBrightness(color, -15));
+
+    // Create new objects for change detection
+    this.monthlyChartData = {
+      ...this.monthlyChartData,
+      labels: newLabels,
+      datasets: [
+        {
+          ...this.monthlyChartData.datasets[0], // Spread existing dataset options
+          data: newData,
+          backgroundColor: backgroundColors,
+          hoverBackgroundColor: hoverBackgroundColors,
+        }
+      ]
+    };
 
     this.cdr.detectChanges(); // Trigger change detection
   }
@@ -523,6 +536,10 @@ export class DashboardComponent implements OnInit {
     const defaultColor = this.colorPalette[0] || '#000000'; // Fallback color
     const isArrayBg = Array.isArray(chartData.datasets[0].backgroundColor);
     
+    // Assign new arrays/values to trigger change detection if possible
+    // Note: We are still mutating the input 'chartData' here which might be 
+    // less ideal than reconstructing it fully in the calling methods.
+    // However, let's try this first.
     chartData.labels = ['No Data'];
     chartData.datasets[0].data = [0];
     chartData.datasets[0].backgroundColor = isArrayBg ? [defaultColor] : defaultColor;
